@@ -1,0 +1,96 @@
+:root {
+  --bg: #f5f5f0;
+  --surface: #ffffff;
+  --primary: #3c5aa6;
+  --secondary: #2a75bb;
+  --accent: #ffcb05;
+  --accent-dark: #c7a008;
+  --text: #242424;
+  --muted: #6b7280;
+  --border: #d8d8d8;
+  --success: #2e9e5b;
+  --danger: #d64545;
+  --radius: 12px;
+  --border-width: 1px;
+  --shadow: 0 2px 0 rgba(0, 0, 0, 0.08);
+  --font-heading: 'Fredoka', 'Nunito', sans-serif;
+  --font-body: 'Nunito', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+[data-theme='ocean'] {
+  --primary: #0e7490;
+  --secondary: #06b6d4;
+  --accent: #67e8f9;
+  --accent-dark: #0e7490;
+  --bg: #f0fafb;
+}
+[data-theme='fire'] {
+  --primary: #c2410c;
+  --secondary: #ea580c;
+  --accent: #fdba74;
+  --accent-dark: #9a3412;
+  --bg: #fdf6f2;
+}
+[data-theme='forest'] {
+  --primary: #15803d;
+  --secondary: #16a34a;
+  --accent: #86efac;
+  --accent-dark: #166534;
+  --bg: #f2f8f2;
+}
+[data-theme='dark'] {
+  --bg: #17181c;
+  --surface: #22242b;
+  --text: #ececec;
+  --muted: #9ca3af;
+  --border: #3a3d47;
+  --primary: #5b7dd6;
+  --secondary: #7ea2f0;
+  --accent: #ffcb05;
+  --accent-dark: #c7a008;
+  --shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+}
+
+[data-ui='retro'] {
+  --radius: 6px;
+  --border-width: 2px;
+  --shadow: 4px 4px 0 rgba(0, 0, 0, 0.18);
+}
+[data-ui='pixel'] {
+  --radius: 0px;
+  --border-width: 3px;
+  --shadow: 3px 3px 0 rgba(0, 0, 0, 0.3);
+  --font-heading: 'JetBrains Mono', monospace;
+}
+
+/* §9.3 — colores por tipo */
+:root {
+  --type-normal: #a8a878;
+  --type-fire: #e4572e;
+  --type-water: #3b82c4;
+  --type-electric: #f2c300;
+  --type-grass: #4caf50;
+  --type-ice: #7fd4e8;
+  --type-fighting: #c03028;
+  --type-poison: #a040a0;
+  --type-ground: #e0c068;
+  --type-flying: #a890f0;
+  --type-psychic: #e85d9b;
+  --type-bug: #a8b820;
+  --type-rock: #b8a038;
+  --type-ghost: #6b4e9b;
+  --type-dragon: #4a5bc7;
+  --type-dark: #705848;
+  --type-steel: #b8b8d0;
+  --type-fairy: #f4a6c8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

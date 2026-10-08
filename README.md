@@ -1,8 +1,8 @@
 # pomodex
 
-> Pomodoro / flow timer gamificado. Eres un entrenador: tus sesiones de concentración entrenan a tus criaturas.
+> Pomodoro / flow timer gamificado. Eres un entrenador: tus sesiones de concentración entrenan a tus Pokémon.
 
-**Focus Trainer** es una herramienta de productividad convertida en un pequeño juego: cada sesión de enfoque completada da XP a tu equipo, monedas, la posibilidad de capturar criaturas y daño a los jefes de gimnasio. 100 % local, sin cuentas, sin backend, funciona offline.
+**Focus Trainer** es una herramienta de productividad convertida en un pequeño juego: cada sesión de enfoque completada da XP a tu equipo, monedas, la posibilidad de capturar Pokémon y daño a los jefes de gimnasio. 100 % local, sin cuentas, sin backend, funciona offline.
 
 ---
 
@@ -36,7 +36,7 @@
 
 ### Sistemas opcionales
 - **Misiones** diarias, semanales y de historia · **Logros** declarativos.
-- **Expediciones** idle ligero (1–3 criaturas, avanzan con foco real).
+- **Expediciones** idle ligero (1–3 Pokémon, avanzan con foco real).
 - **Nuzlocke** (abandonar debilita al compañero) y **Strict focus** (distracciones ×2).
 
 ### Personalización
@@ -114,4 +114,4 @@ npm run test:e2e        # Playwright (flujo del timer)
 
 ## Propiedad intelectual
 
-Pokémon, sus sprites, cries y marcas son propiedad de Nintendo/Game Freak/The Pokémon Company. Este proyecto es **personal y privado**; todo pasa por `CreatureProvider`, de modo que puede sustituirse por criaturas propias sin tocar el motor. Ver `SPECS.md` §16.
+Pokémon, sus sprites, cries y marcas son propiedad de Nintendo/Game Freak/The Pokémon Company. Este proyecto es **personal y privado**; todo pasa por `CreatureProvider`, de modo que puede sustituirse por Pokémon propios sin tocar el motor. Ver `SPECS.md` §16.

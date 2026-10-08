@@ -1,0 +1,90 @@
+@import 'tailwindcss';
+@import './themes/tokens.css';
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-heading);
+}
+
+.tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.panel {
+  background: var(--surface);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.btn {
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.55rem 1.1rem;
+  font-weight: 700;
+  background: var(--surface);
+  color: var(--text);
+  min-height: 44px;
+  transition: transform 0.08s ease;
+  cursor: pointer;
+}
+.btn:hover {
+  filter: brightness(0.97);
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn:focus-visible {
+  outline: 3px solid var(--secondary);
+  outline-offset: 2px;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.btn-accent {
+  background: var(--accent);
+  border-color: var(--accent-dark);
+  color: var(--text);
+}
+.btn-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.sprite {
+  image-rendering: pixelated;
+}
+
+@keyframes bounce-soft {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+.companion-bounce {
+  animation: bounce-soft 2s ease-in-out infinite;
+}

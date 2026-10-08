@@ -1,6 +1,6 @@
 # SPECS.md — Focus Trainer (nombre provisional)
 
-> Pomodoro / flow timer gamificado. Eres un entrenador: tus sesiones de concentración entrenan a tus criaturas.
+> Pomodoro / flow timer gamificado. Eres un entrenador: tus sesiones de concentración entrenan a tus Pokémon.
 > Proyecto personal, 100 % local (sin backend). Versión del documento: 0.1
 
 ---
@@ -10,7 +10,7 @@
 1. [Visión y alcance](#1-visión-y-alcance)
 2. [Decisiones técnicas (stack)](#2-decisiones-técnicas-stack)
 3. [Arquitectura](#3-arquitectura)
-4. [Fuente de datos de criaturas (PokeAPI + abstracción)](#4-fuente-de-datos-de-criaturas)
+4. [Fuente de datos de Pokémon (PokeAPI + abstracción)](#4-fuente-de-datos-de-Pokémon)
 5. [Modelo de datos](#5-modelo-de-datos)
 6. [Motor del timer](#6-motor-del-timer)
 7. [Sistemas de juego](#7-sistemas-de-juego)
@@ -30,7 +30,7 @@
 ## 1. Visión y alcance
 
 ### 1.1 Concepto
-Cada sesión de enfoque completada es una "ruta explorada": da XP a tus criaturas, monedas, la posibilidad de capturar una criatura nueva y daño a los jefes (líderes de gimnasio). La productividad real es el motor del juego; el juego nunca debe estorbar al timer.
+Cada sesión de enfoque completada es una "ruta explorada": da XP a tus Pokémon, monedas, la posibilidad de capturar un Pokémon nuevo y daño a los jefes (líderes de gimnasio). La productividad real es el motor del juego; el juego nunca debe estorbar al timer.
 
 ### 1.2 Objetivos
 - Timer fiable (Pomodoro clásico, personalizado y flow) como núcleo.
@@ -175,12 +175,12 @@ El resultado se persiste en **una sola transacción de Dexie** para no dejar el 
 
 ---
 
-## 4. Fuente de datos de criaturas
+## 4. Fuente de datos de Pokémon
 
 ### 4.1 Problema
 - PokeAPI **no incluye** datos de líderes de gimnasio, Alto Mando ni medallas. Eso se define a mano (§7.9).
 - Llamar a la API en cada pantalla es lento y poco respetuoso con el servicio.
-- Más adelante podrías querer criaturas propias (§16).
+- Más adelante podrías querer Pokémon propios (§16).
 
 ### 4.2 Estrategia: snapshot en build + abstracción
 
@@ -189,7 +189,7 @@ El resultado se persiste en **una sola transacción de Dexie** para no dejar el 
    - `types.json`: matriz de efectividad 18×18.
    - `evolutions.json`: cadenas normalizadas.
 2. En runtime solo se descargan **sprites y cries** (lazy), y el Service Worker los cachea.
-3. La app consume todo mediante una interfaz `CreatureProvider`, así se puede cambiar por criaturas propias sin tocar el resto.
+3. La app consume todo mediante una interfaz `CreatureProvider`, así se puede cambiar por Pokémon propios sin tocar el resto.
 
 Campos a extraer por especie:
 
@@ -426,8 +426,8 @@ db.version(1).stores({
 
 ### 5.3 Reglas de integridad
 - Máximo 1 `ActiveSession` a la vez.
-- Máximo 6 criaturas en `teamIds` y el compañero debe estar en el equipo.
-- Una criatura en expedición no puede ser compañera.
+- Máximo 6 Pokémon en `teamIds` y el compañero debe estar en el equipo.
+- Un Pokémon en expedición no puede ser compañero.
 - XP total es la fuente de verdad; el nivel se **deriva** de la XP (y se cachea).
 
 ---
@@ -503,12 +503,12 @@ Durante el descanso se muestra el **panel de descanso** con acciones: resolver e
 | slow | 5n³ / 4 |
 | erratic / fluctuating | Tablas por tramos (implementar según referencia de PokeAPI/Bulbapedia) |
 
-- Referencia de ritmo: nivel 50 ≈ 6 250 XP (~25 sesiones de 25 min). Nivel 100 ≈ 50 000 XP (~80–90 h de foco para una criatura `medium-fast`).
+- Referencia de ritmo: nivel 50 ≈ 6 250 XP (~25 sesiones de 25 min). Nivel 100 ≈ 50 000 XP (~80–90 h de foco para un Pokémon `medium-fast`).
 - Nivel máximo 100. Opcional futuro: "estrellas de maestría" tras el 100.
 
 ### 7.2 Compañero y amistad
-- Compañero = criatura activa en pantalla principal.
-- Amistad +1 por cada día en que fue compañero y hubo ≥ 1 sesión válida; +3 por baya; −5 si abandonas con ella como compañera.
+- Compañero = Pokémon activo en pantalla principal.
+- Amistad +1 por cada día en que fue compañero y hubo ≥ 1 sesión válida; +3 por baya; −5 si abandonas con él como compañero.
 - Reacciones del sprite: alegre (completar), triste (abandonar), dormida (inactividad > 24 h), celebrando (subida de nivel/evolución).
 
 ### 7.3 Rareza y encuentros
@@ -545,11 +545,11 @@ Modificadores:
 **Pool de especies:**
 1. Se filtra por regiones desbloqueadas (generaciones ≤ región actual; configurable).
 2. **Afinidad de categoría:** 60 % de las tiradas salen del pool de tipos de la categoría de la sesión; 40 % del pool general.
-3. Las criaturas ya evolucionadas no aparecen salvajes salvo rareza ≥ `rare` (configurable). Las etapas bebé sí.
+3. Los Pokémon ya evolucionados no aparecen salvajes salvo rareza ≥ `rare` (configurable). Las etapas bebé sí.
 
 **Shiny:** `shinyRate = 1/100` por defecto (configurable). Se garantiza un shiny al alcanzar una racha de 30 días (una vez por hito).
 
-**Encuentro pendiente:** si el usuario no lo resuelve, expira en `encounterTtlHours` (por defecto 24 h) y la criatura "huye" (se marca como vista).
+**Encuentro pendiente:** si el usuario no lo resuelve, expira en `encounterTtlHours` (por defecto 24 h) y el Pokémon "huye" (se marca como visto).
 
 ### 7.4 Captura
 
@@ -617,7 +617,7 @@ Tienda (precios por defecto):
 | Poké Ball | 20 | Ball estándar |
 | Great Ball | 50 | ×1.5 |
 | Ultra Ball | 120 | ×2.0 |
-| Poción | 40 | Recupera una criatura debilitada (modo Nuzlocke) |
+| Poción | 40 | Recupera un Pokémon debilitado (modo Nuzlocke) |
 | Revivir | 120 | Revive instantáneamente |
 | Escudo de racha | 150 | Protege la racha un día perdido (máx 2) |
 | Incienso | 200 | Más rareza por 5 encuentros |
@@ -672,7 +672,7 @@ levelFactor = clamp( nivelMedioEquipo / recommendedLevel , 0.6 , 1.2 )
 qualityMult = Perfecta 1.2 · Buena 1.0 · Floja 0.8
 ```
 
-- La efectividad de cada criatura = producto de la matriz de tipos de sus tipos atacantes contra los tipos del jefe (jefe dual: se multiplican).
+- La efectividad de cada Pokémon = producto de la matriz de tipos de sus tipos atacantes contra los tipos del jefe (jefe dual: se multiplican).
 - El equipo "juega" con el mejor atacante, así conviene armar equipos variados.
 - El daño se aplica **al terminar la sesión**; el progreso persiste entre días.
 - Solo hay un jefe activo a la vez (el siguiente en orden), pero se puede cambiar de jefe disponible sin perder progreso.
@@ -703,16 +703,16 @@ Efectos: filtro de encuentros (§7.3) y estadísticas por categoría ("tu colecc
 
 ### 7.11 Expediciones (idle ligero)
 
-- El usuario envía 1–3 criaturas a explorar. Tiers: 1 (60 min), 2 (180 min), 3 (480 min) de **foco real**.
+- El usuario envía 1–3 Pokémon a explorar. Tiers: 1 (60 min), 2 (180 min), 3 (480 min) de **foco real**.
 - Avanzan con minutos de foco válido (no con tiempo de pared), para no premiar la ausencia (configurable: `expeditionsUseWallClock`).
 - Recompensas: monedas, caramelos de XP, bayas, piedras (tier 3), huevo (probabilidad baja).
-- Criaturas en expedición no cuentan como equipo ni compañero.
+- Pokémon en expedición no cuentan como equipo ni compañero.
 
 ### 7.12 Misiones
 
 Plantillas diarias (3 al azar) y semanales (2):
 
-- "Completa 3 pomodoros" · "Enfoca 90 minutos en Estudio" · "Captura una criatura tipo Agua".
+- "Completa 3 pomodoros" · "Enfoca 90 minutos en Estudio" · "Captura un Pokémon tipo Agua".
 - Semanales: "5 días con al menos una sesión" · "Eclosiona un huevo".
 - Historia: ligadas a regiones ("Derrota al primer líder").
 
@@ -733,7 +733,7 @@ interface QuestTemplate {
 Declarativos, evaluados al final del pipeline. Ejemplos: 10/50/100/500 h totales, 7/30/100 días de racha, completar Pokédex de una generación, primer shiny, capturar un legendario, derrotar las 9 hitos de una región, sesiones perfectas × 20.
 
 ### 7.14 Modos opcionales
-- **Nuzlocke:** abandonar una sesión debilita al compañero durante `faintDays` (por defecto 2). Una criatura debilitada no gana XP ni aporta daño. Se cura con Revivir/Poción o esperando.
+- **Nuzlocke:** abandonar una sesión debilita al compañero durante `faintDays` (por defecto 2). Un Pokémon debilitado no gana XP ni aporta daño. Se cura con Revivir/Poción o esperando.
 - **Strict focus:** distracciones penalizan el doble y cambiar de pestaña > 30 s abandona la sesión.
 - **Sin penalizaciones (casual):** abandonar no tiene consecuencias.
 
@@ -857,7 +857,7 @@ Autoalojar las fuentes (no depender de CDN) para que funcione offline.
 
 ```
 ┌───────────────────────────────────────────────────────────┐
-│ ▣ Focus Trainer      🔥 Racha 12   🪙 340   🎒   ⚙         │
+│ ▣ Focus Trainer      🔥 Racha 12   💵 340   🎒   ⚙         │
 ├──────────────────────────────┬────────────────────────────┤
 │                              │  HOY                       │
 │        [ Compañero ]         │  XP       +420             │
@@ -873,11 +873,11 @@ Autoalojar las fuentes (no depender de CDN) para que funcione offline.
 ```
 *Imagen de ejemplo; el sprite real depende del provider.*
 
-Elementos obligatorios: criatura protagonista, nivel + barra XP, timer grande, progreso de sesión, acciones Start/Pause/Finish, datos del día (XP, sesiones, tiempo enfocado).
+Elementos obligatorios: Pokémon protagonista, nivel + barra XP, timer grande, progreso de sesión, acciones Start/Pause/Finish, datos del día (XP, sesiones, tiempo enfocado).
 
 ### 9.8 Flujo post-sesión
 1. Modal **Resumen de recompensas** (XP, monedas, daño, huevo, misión, racha) con animación breve y botón "Continuar".
-2. Si hay encuentro: pantalla de **Encuentro** (criatura, rareza, selector de ball, lanzar).
+2. Si hay encuentro: pantalla de **Encuentro** (Pokémon, rareza, selector de ball, lanzar).
 3. Si hay evolución disponible: aviso confirmable.
 4. Inicio del descanso (con botón "Saltar descanso").
 
@@ -923,7 +923,7 @@ Validación: el editor de tema Custom muestra un aviso si el contraste texto/fon
 Se implementan cambiando tokens (`--radius`, `--border-width`, `--font-heading`, `--shadow`), no duplicando componentes.
 
 ### 10.3 Otros ajustes
-- Compañero elegible entre las criaturas del equipo.
+- Compañero elegible entre los Pokémon del equipo.
 - Fondos (patrones y escenas por región) desbloqueables con monedas/logros.
 - Marcos de tarjeta y estilos de barra de progreso desbloqueables.
 - Sistema de recompensas configurable (§8).
@@ -959,7 +959,7 @@ Se implementan cambiando tokens (`--radius`, `--border-width`, `--font-heading`,
 
 - Fuente de verdad: IndexedDB (Dexie). Ajustes ligeros pueden duplicarse en `localStorage` solo para arranque rápido (tema, idioma).
 - **Export:** botón que genera `focus-trainer-backup-YYYY-MM-DD.json` con todas las tablas + `schemaVersion` + `exportedAt`.
-- **Import:** valida con Zod; muestra resumen (n.º criaturas, sesiones, nivel) y pide confirmación antes de sobrescribir; crea backup automático previo.
+- **Import:** valida con Zod; muestra resumen (n.º Pokémon, sesiones, nivel) y pide confirmación antes de sobrescribir; crea backup automático previo.
 - **Migraciones:** `schemaVersion` en `profile`; funciones `migrate_vN_to_vN+1` puras y testeadas; Dexie `version()` para cambios de esquema.
 - **Backup automático** opcional: recordatorio semanal para exportar.
 - Posible futuro: guardado en archivo con la File System Access API.
@@ -974,10 +974,10 @@ Se implementan cambiando tokens (`--radius`, `--border-width`, `--font-heading`,
 - Navegación completa con teclado y `:focus-visible` marcado.
 - Timer: `role="timer"`; **no** anunciar cada segundo en `aria-live`; anunciar inicio, pausa, minutos restantes cada 5 min y fin.
 - `prefers-reduced-motion`: desactivar animaciones no esenciales.
-- Alt text en sprites (nombre de la criatura).
+- Alt text en sprites (nombre del Pokémon).
 
 ### i18n
-- Textos en `es.json`/`en.json` (`i18next` o implementación ligera). Nombres y descripciones de criaturas vienen del dataset.
+- Textos en `es.json`/`en.json` (`i18next` o implementación ligera). Nombres y descripciones de Pokémon vienen del dataset.
 - Formato de fechas/números según `locale`.
 
 ### Rendimiento (objetivos)
@@ -1017,12 +1017,12 @@ Cada fase termina con algo usable.
 - Timer con máquina de estados y persistencia de sesión activa.
 - Categorías, calidad de sesión, encuentro tras sesión, captura, colección básica.
 - Pantalla Focus + resumen post-sesión + export/import JSON.
-- **Hecho cuando:** puedes completar una sesión, capturar una criatura y verla en la Pokédex tras recargar.
+- **Hecho cuando:** puedes completar una sesión, capturar un Pokémon y verla en la Pokédex tras recargar.
 
 ### Fase 2 — Progresión
 - XP, niveles (curvas por `growth_rate`), compañero, equipo.
 - Evoluciones, monedas, tienda, inventario, rachas.
-- **Hecho cuando:** una criatura sube de nivel y evoluciona con las reglas de §7.5.
+- **Hecho cuando:** un Pokémon sube de nivel y evoluciona con las reglas de §7.5.
 
 ### Fase 3 — Gimnasios y regiones
 - Datos de Kanto (13 jefes), matriz de tipos, daño por foco, medallas, Liga.
@@ -1042,7 +1042,7 @@ Cada fase termina con algo usable.
 - **Hecho cuando:** instalable, offline y con 4+ temas y 3 estilos.
 
 ### Fase 6 — Opcional
-- Criaturas y arte propios (§16), Tauri, backend para push/sync, modo multijugador.
+- Pokémon y arte propios (§16), Tauri, backend para push/sync, modo multijugador.
 
 ---
 
@@ -1052,8 +1052,8 @@ Cada fase termina con algo usable.
 - Para uso **personal y privado** es razonable. Para publicar, compartir o monetizar hay riesgo legal.
 - Por eso el proyecto se diseña para **desacoplarse**:
   - Todo pasa por `CreatureProvider` (§4.3).
-  - Se puede añadir `OwnCreaturesProvider` con criaturas, tipos, nombres y sprites propios ("inspirados en", no copias) sin cambiar el motor.
-  - La UI usa terminología neutra donde sea posible ("Criatura", "Entrenador", "Cápsula") y el branding propio (nombre, logo, iconos) no copia la imagen oficial.
+  - Se puede añadir `OwnCreaturesProvider` con Pokémon, tipos, nombres y sprites propios ("inspirados en", no copias) sin cambiar el motor.
+  - La UI usa terminología neutra donde sea posible ("Pokémon", "Entrenador", "Cápsula") y el branding propio (nombre, logo, iconos) no copia la imagen oficial.
 - Fuentes (Fredoka, Nunito, JetBrains Mono, etc.) tienen licencias abiertas (SIL OFL); incluir sus licencias en el repositorio.
 - Esto no es asesoría legal; consultar a un profesional si se planea publicar.
 
@@ -1061,7 +1061,7 @@ Cada fase termina con algo usable.
 
 ## 17. Preguntas abiertas
 
-1. **Alcance de PokeAPI vs criaturas propias:** ¿empezar con PokeAPI para prototipar y migrar luego, o crear el sistema de criaturas propias desde el inicio?
+1. **Alcance de PokeAPI vs Pokémon propios:** ¿empezar con PokeAPI para prototipar y migrar luego, o crear el sistema de Pokémon propios desde el inicio?
 2. **Generaciones por región:** ¿se desbloquean especies por generación al avanzar de región, o todo desde el inicio?
 3. **Penalización por abandono:** ¿qué nivel de dureza por defecto (casual / normal / Nuzlocke)?
 4. **Expediciones:** ¿con minutos de foco o con tiempo real?

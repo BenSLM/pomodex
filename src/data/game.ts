@@ -1,6 +1,6 @@
 import { db } from './db';
-import { DEFAULT_CATEGORIES, defaultInventory, defaultProfile, defaultSettings, defaultStreak } from './defaults';
-import type { Category, GameState, Settings, StreakState, PendingEvolution } from '../core/types';
+import { defaultInventory, defaultProfile, defaultSettings, defaultStreak } from './defaults';
+import type { GameState, Settings, StreakState, PendingEvolution } from '../core/types';
 import type { ActiveSession, SessionRecord } from '../core/types';
 import { finishSession } from '../core/timer/machine';
 import { applySessionRewards, type RewardSummary } from '../core/rewards/pipeline';
@@ -13,17 +13,11 @@ export async function ensureSeeded(): Promise<void> {
   if (!(await db.profile.get('me'))) await db.profile.put(defaultProfile(now));
   if (!(await db.inventory.get('me'))) await db.inventory.put(defaultInventory());
   if (!(await db.settings.get('me'))) await db.settings.put(defaultSettings());
-  if ((await db.categories.count()) === 0) await db.categories.bulkAdd(DEFAULT_CATEGORIES);
   if (!(await db.meta.get('streak'))) await db.meta.put({ key: 'streak', value: defaultStreak() });
 }
 
 export async function getSettings(): Promise<Settings> {
   return (await db.settings.get('me')) ?? defaultSettings();
-}
-
-export async function getCategories(): Promise<Category[]> {
-  const list = await db.categories.toArray();
-  return list.length > 0 ? list : DEFAULT_CATEGORIES;
 }
 
 export async function loadGameState(): Promise<GameState> {
@@ -54,7 +48,7 @@ export async function resolveSession(
   active: ActiveSession,
   recordOverride?: SessionRecord,
 ): Promise<{ record: SessionRecord; summary: RewardSummary }> {
-  const [settings, categories] = await Promise.all([getSettings(), getCategories()]);
+  const settings = await getSettings();
   const state = await loadGameState();
   const clock = new SystemClock();
   const record =
@@ -68,7 +62,6 @@ export async function resolveSession(
     clock,
     dataset,
     rolloverHour: settings.dayRolloverHour,
-    categories,
   });
   const fullRecord: SessionRecord = { ...record, xp: summary.xpCompanion, coins: summary.coins };
 

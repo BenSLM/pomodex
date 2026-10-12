@@ -1,16 +1,5 @@
-import type { Category, Inventory, Profile, RewardConfig, Settings, StreakState } from '../core/types';
+import type { Inventory, Profile, RewardConfig, Settings, StreakState } from '../core/types';
 import { DEFAULT_REWARD_CONFIG } from '../core/rewards/config';
-
-export const DEFAULT_CATEGORIES: Category[] = [
-  { id: 'study', name: 'Estudiar', icon: '📚', color: '#E85D9B', affinityTypes: ['psychic', 'normal'] },
-  { id: 'code', name: 'Programar', icon: '💻', color: '#F2C300', affinityTypes: ['electric', 'steel'] },
-  { id: 'exercise', name: 'Ejercicio', icon: '🏃', color: '#E4572E', affinityTypes: ['fighting', 'fire'] },
-  { id: 'read', name: 'Leer', icon: '📖', color: '#F4A6C8', affinityTypes: ['fairy', 'normal'] },
-  { id: 'create', name: 'Escribir / crear', icon: '✍️', color: '#6B4E9B', affinityTypes: ['fairy', 'ghost'] },
-  { id: 'deep', name: 'Trabajo profundo', icon: '🧠', color: '#4A5BC7', affinityTypes: ['dragon', 'dark'] },
-  { id: 'languages', name: 'Idiomas', icon: '🗣️', color: '#3B82C4', affinityTypes: ['flying', 'water'] },
-  { id: 'home', name: 'Hogar / otros', icon: '🏡', color: '#4CAF50', affinityTypes: ['grass', 'ground'] },
-];
 
 export function defaultProfile(now: number): Profile {
   return {

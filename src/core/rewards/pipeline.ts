@@ -4,7 +4,6 @@ import type { Dataset } from '../dataset';
 import { getSpecies } from '../dataset';
 import type {
   BallId,
-  Category,
   Egg,
   Encounter,
   GameState,
@@ -43,7 +42,6 @@ export interface RewardDeps {
   clock: Clock;
   dataset: Dataset;
   rolloverHour: number;
-  categories: Category[];
 }
 
 const REGION_GENERATION: Record<string, number> = {
@@ -81,7 +79,6 @@ export function applySessionRewards(
   let encounter: Encounter | null = null;
   let pityCount = profile.pityCount;
 
-  const category = deps.categories.find((c) => c.id === session.categoryId);
   const summary: RewardSummary = {
     valid,
     quality: label,
@@ -120,8 +117,7 @@ export function applySessionRewards(
 
     // 3. niveles derivados de la XP
     creatures = creatures.map((c) => {
-      const species = getSpecies(deps.dataset, c.speciesId);
-      const newLevel = levelFromXp(species.growthRate, c.xp, config.xpScale);
+      const newLevel = levelFromXp(c.xp, config.xpScale);
       return newLevel === c.level ? c : { ...c, level: newLevel };
     });
     for (const c of creatures) {
@@ -212,7 +208,6 @@ export function applySessionRewards(
       rng: deps.rng,
       config,
       maxGeneration: REGION_GENERATION[profile.currentRegion] ?? 1,
-      affinityTypes: category?.affinityTypes ?? [],
       perfect: label === 'perfect',
       flowOvertimeMin: session.overtimeMs / 60_000,
       incenseActive: (inventory.incenseCharges ?? 0) > 0,
@@ -226,7 +221,7 @@ export function applySessionRewards(
       speciesId: roll.speciesId,
       shiny: roll.shiny,
       level: 3 + deps.rng.int(0, 8),
-      throwsLeft: config.throwsPerEncounter,
+      attempts: 0,
       expiresAt: now + config.encounterTtlHours * 3_600_000,
     };
     dex = markDex(dex, roll.speciesId, { seen: true, firstSeenAt: now });
@@ -255,7 +250,6 @@ export function createOwnedCreature(params: {
   rng: Rng;
   shiny: boolean;
   dataset: Dataset;
-  categoryId?: string;
   level?: number;
 }): OwnedCreature {
   const species = getSpecies(params.dataset, params.speciesId);
@@ -268,7 +262,6 @@ export function createOwnedCreature(params: {
     friendship: species.baseHappiness,
     caughtAt: params.now,
     caughtWith: params.ball,
-    categoryId: params.categoryId,
   };
 }
 

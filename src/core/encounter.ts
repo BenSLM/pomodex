@@ -1,12 +1,11 @@
 import type { Dataset, CreatureSpecies } from './dataset';
-import type { Rarity, RewardConfig, TypeId } from './types';
+import type { Encounter, Rarity, RewardConfig } from './types';
 import type { Rng } from './rng';
 
 export interface EncounterRollDeps {
   rng: Rng;
   config: RewardConfig;
   maxGeneration: number;
-  affinityTypes: TypeId[];
   perfect: boolean;
   flowOvertimeMin: number;
   incenseActive: boolean;
@@ -15,17 +14,14 @@ export interface EncounterRollDeps {
 
 const RARE_PLUS: Rarity[] = ['rare', 'epic', 'legendary', 'mythical'];
 
-/** §7.3 — pool: región (generación) + afinidad de categoría + evolucionados solo si rareza ≥ rare. */
+/** §7.3 — pool: especies de la región actual (evolucionadas solo si rareza ≥ rare). */
 export function encounterPool(dataset: Dataset, deps: EncounterRollDeps): CreatureSpecies[] {
   const isEvolved = (id: number) => dataset.evolutionEdges.some((e) => e.to === id);
-  const general = dataset.creatures.filter(
+  return dataset.creatures.filter(
     (c) =>
       c.generation <= deps.maxGeneration &&
       (c.isBaby || !isEvolved(c.id) || RARE_PLUS.includes(c.rarity)),
   );
-  if (deps.affinityTypes.length === 0) return general;
-  const affinity = general.filter((c) => c.types.some((t) => deps.affinityTypes.includes(t)));
-  return deps.rng.chance(0.6) && affinity.length > 0 ? affinity : general;
 }
 
 /** §7.3 — pesos con modificadores + pity timer. */
@@ -63,4 +59,9 @@ function weightedPick(pool: CreatureSpecies[], weights: number[], rng: Rng): Cre
     if (roll <= 0) return pool[i];
   }
   return pool[pool.length - 1];
+}
+
+/** §7.4 — el encuentro expira (el Pokémon "huye") al superar su TTL. */
+export function isEncounterExpired(encounter: Pick<Encounter, 'expiresAt'>, now: number): boolean {
+  return now >= encounter.expiresAt;
 }

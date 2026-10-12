@@ -199,12 +199,12 @@ Campos a extraer por especie:
 | `capture_rate` | `pokemon-species` | Probabilidad de captura |
 | `base_happiness` | `pokemon-species` | Amistad inicial |
 | `hatch_counter` | `pokemon-species` | Duración de huevo |
-| `growth_rate.name` | `pokemon-species` | Curva de XP |
+| `growth_rate.name` | `pokemon-species` | Curva de XP (ignorada: §7.1 usa curva única `n³`) |
 | `is_legendary`, `is_mythical`, `is_baby` | `pokemon-species` | Rareza |
 | `flavor_text_entries` (es/en) | `pokemon-species` | Descripción en Pokédex |
 | `generation` | `pokemon-species` | Región/pool |
 | `evolution_chain.url` | `pokemon-species` | Evoluciones |
-| `types[]` | `pokemon` | Tipos, afinidad, daño a jefes |
+| `types[]` | `pokemon` | Tipos, daño a jefes (afinidad por categoría eliminada, §7.10) |
 | `stats[]` → BST | `pokemon` | Rareza "épica" (pseudo-legendarios) |
 | `base_experience` | `pokemon` | Ajuste fino de XP (opcional) |
 | `sprites` (URLs) | `pokemon` | Imagen normal/shiny/animada |
@@ -230,7 +230,7 @@ interface CreatureSpecies {
   captureRate: number;             // 3–255
   baseHappiness: number;
   hatchCounter: number;
-  growthRate: GrowthRate;
+  growthRate: GrowthRate;          // (reemplazado: ignorado; curva única §7.1)
   rarity: Rarity;                  // derivada, ver §7.3
   bst: number;
   generation: number;
@@ -279,7 +279,6 @@ interface OwnedCreature {
   friendship: number;          // 0–255
   caughtAt: number;
   caughtWith: BallId;
-  categoryId?: string;         // categoría donde se capturó
   faintedUntil?: number;       // modo Nuzlocke
   onExpeditionId?: string;
 }
@@ -293,7 +292,7 @@ interface DexEntry {
   firstCaughtAt?: number;
 }
 
-interface Category {            // categoría de tarea definida por el usuario
+interface Category {            // (reemplazado: categorías eliminadas, ver §7.10)
   id: string;
   name: string;
   icon: string;
@@ -303,7 +302,6 @@ interface Category {            // categoría de tarea definida por el usuario
 
 interface SessionRecord {
   id: string;
-  categoryId: string;
   goalId?: string;
   mode: 'pomodoro' | 'flow';
   plannedMs: number;
@@ -320,7 +318,6 @@ interface SessionRecord {
 interface ActiveSession {       // sesión en curso (persistida para sobrevivir recargas)
   id: string;
   state: 'focusing' | 'paused' | 'break';
-  categoryId: string;
   goalId?: string;
   mode: 'pomodoro' | 'flow';
   plannedMs: number;
@@ -344,7 +341,7 @@ interface Encounter {            // encuentro pendiente tras una sesión
   speciesId: number;
   shiny: boolean;
   level: number;
-  throwsLeft: number;           // por defecto 3
+  attempts?: number;            // lanzamientos realizados (informativo); intentos ilimitados
   expiresAt: number;            // desaparece si no se resuelve (config)
 }
 
@@ -363,7 +360,6 @@ interface GymProgress {
 interface Goal {                 // meta real vinculable a un gimnasio personalizado
   id: string;
   name: string;
-  categoryId?: string;
   targetMinutes: number;
   progressMinutes: number;
   rewardBadge?: string;
@@ -404,13 +400,14 @@ interface Settings {
 ### 5.2 Esquema Dexie
 
 ```ts
-db.version(1).stores({
+// v1 original (histórico). v2 (reemplazado): categorías eliminadas
+db.version(2).stores({
   profile:      'id',
   creatures:    'id, speciesId, caughtAt',
   dex:          'speciesId',
-  sessions:     'id, startedAt, categoryId, outcome',
+  sessions:     'id, startedAt, outcome',
   activeSession:'id',
-  categories:   'id',
+  categories:   null,
   eggs:         'id',
   encounters:   'id',
   inventory:    'id',
@@ -456,7 +453,7 @@ idle ──start──▶ focusing ◀──resume── paused
 | Modo | Comportamiento |
 |---|---|
 | Pomodoro | 25/5, descanso largo de 15 tras 4 ciclos. Todo configurable (10–120 min foco). |
-| Personalizado | Preset guardado por categoría. |
+| Personalizado | Preset de duración guardado por el usuario. |
 | Flow | Al llegar a la meta el timer **no se detiene**; sigue en "overtime" hasta que el usuario termine. El tiempo extra suma un bonus de rareza (§7.3). |
 
 ### 6.4 Validez de una sesión
@@ -493,15 +490,17 @@ Durante el descanso se muestra el **panel de descanso** con acciones: resolver e
   - `qualityMult`: Perfecta 1.25, Buena 1.0, Floja 0.8
   - `streakMult = min(1 + 0.02 × streakDays, 1.5)`
 - Reparto: compañero 100 %, resto del equipo 25 %.
-- Curva por `growth_rate` (fórmulas clásicas, `n` = nivel), multiplicadas por `XP_SCALE = 0.05` para que 100 niveles sean alcanzables:
+- ~~Curva por `growth_rate` (fórmulas clásicas, `n` = nivel), multiplicadas por `XP_SCALE = 0.05` para que 100 niveles sean alcanzables:~~
 
-| Growth rate | XP total para nivel n (antes de escala) |
+| ~~Growth rate~~ | ~~XP total para nivel n (antes de escala)~~ |
 |---|---|
-| fast | 4n³ / 5 |
-| medium-fast | n³ |
-| medium-slow | 6n³/5 − 15n² + 100n − 140 |
-| slow | 5n³ / 4 |
-| erratic / fluctuating | Tablas por tramos (implementar según referencia de PokeAPI/Bulbapedia) |
+| ~~fast~~ | ~~4n³ / 5~~ |
+| ~~medium-fast~~ | ~~n³~~ |
+| ~~medium-slow~~ | ~~6n³/5 − 15n² + 100n − 140~~ |
+| ~~slow~~ | ~~5n³ / 4~~ |
+| ~~erratic / fluctuating~~ | ~~Tablas por tramos (implementar según referencia de PokeAPI/Bulbapedia)~~ |
+
+- **Curva única (reemplazado, Prompt 1):** `rawXpForLevel(n) = n³`, escalada por `xpScale` (por defecto 0.05). El `growth_rate` del dataset se ignora a propósito.
 
 - Referencia de ritmo: nivel 50 ≈ 6 250 XP (~25 sesiones de 25 min). Nivel 100 ≈ 50 000 XP (~80–90 h de foco para un Pokémon `medium-fast`).
 - Nivel máximo 100. Opcional futuro: "estrellas de maestría" tras el 100.
@@ -544,7 +543,7 @@ Modificadores:
 
 **Pool de especies:**
 1. Se filtra por regiones desbloqueadas (generaciones ≤ región actual; configurable).
-2. **Afinidad de categoría:** 60 % de las tiradas salen del pool de tipos de la categoría de la sesión; 40 % del pool general.
+2. ~~**Afinidad de categoría:** 60 % de las tiradas salen del pool de tipos de la categoría de la sesión; 40 % del pool general.~~ (reemplazado: categorías eliminadas; el pool es región + reglas de rareza/pity/incienso.)
 3. Los Pokémon ya evolucionados no aparecen salvajes salvo rareza ≥ `rare` (configurable). Las etapas bebé sí.
 
 **Shiny:** `shinyRate = 1/100` por defecto (configurable). Se garantiza un shiny al alcanzar una racha de 30 días (una vez por hito).
@@ -573,7 +572,7 @@ p    = min(0.98, base × ballMult)
 
 Ejemplos con Poké Ball: común (255) 90 %; rara (75) ~34 %; legendaria (3) ~11 %. Con Ultra Ball suben a 98 %, ~68 % y ~22 %.
 
-- 3 lanzamientos por encuentro (configurable). Si fallan todos, huye.
+- ~~3 lanzamientos por encuentro (configurable). Si fallan todos, huye.~~ (reemplazado: lanzamientos ilimitados; un fallo solo resta 1 ball y el Pokémon no huye. Se sale con "Dejar ir" o al expirar el TTL.)
 - Se muestra animación de sacudidas (1–3) según `p` para dar sensación de cercanía.
 - Captura exitosa → se crea `OwnedCreature` (nivel inicial = aleatorio 3–10, o por región), `DexEntry.caught = true`.
 - Duplicados: se aceptan (para equipo/expediciones). Opción de "liberar" a cambio de monedas/caramelos (+ XP al compañero).
@@ -680,26 +679,26 @@ qualityMult = Perfecta 1.2 · Buena 1.0 · Floja 0.8
 - Región completa → desbloquea la siguiente + encuentro especial (legendario) + pool ampliado.
 
 **Gimnasios personalizados (metas reales):**
-- El usuario crea un `Goal` ("Terminar módulo 3 del curso", 600 min, categoría Estudio).
+- El usuario crea un `Goal` ("Terminar módulo 3 del curso", 600 min).
 - Se renderiza como un gimnasio propio con tipo elegido, medalla personalizada y HP = `targetMinutes`.
 - Las sesiones etiquetadas con la meta le restan HP.
 
-### 7.10 Categorías de tarea → tipos
+### 7.10 ~~Categorías de tarea → tipos~~ (reemplazado: eliminadas en Prompt 1)
 
-Categorías por defecto (editables):
+~~Categorías por defecto (editables):~~
 
-| Categoría | Tipos que atrae |
+| ~~Categoría~~ | ~~Tipos que atrae~~ |
 |---|---|
-| Estudiar | psychic, normal |
-| Programar | electric, steel |
-| Ejercicio | fighting, fire |
-| Leer | fairy, normal |
-| Escribir / crear | fairy, ghost |
-| Trabajo profundo | dragon, dark |
-| Idiomas | flying, water |
-| Hogar / otros | grass, ground |
+| ~~Estudiar~~ | ~~psychic, normal~~ |
+| ~~Programar~~ | ~~electric, steel~~ |
+| ~~Ejercicio~~ | ~~fighting, fire~~ |
+| ~~Leer~~ | ~~fairy, normal~~ |
+| ~~Escribir / crear~~ | ~~fairy, ghost~~ |
+| ~~Trabajo profundo~~ | ~~dragon, dark~~ |
+| ~~Idiomas~~ | ~~flying, water~~ |
+| ~~Hogar / otros~~ | ~~grass, ground~~ |
 
-Efectos: filtro de encuentros (§7.3) y estadísticas por categoría ("tu colección refleja en qué inviertes tu tiempo").
+~~Efectos: filtro de encuentros (§7.3) y estadísticas por categoría ("tu colección refleja en qué inviertes tu tiempo").~~ Sin categorías: no hay selector en Focus, ni `categoryId` en sesiones/metas, ni afinidad de tipo. Las estadísticas (Fase 6) serán globales y por hora/día.
 
 ### 7.11 Expediciones (idle ligero)
 
@@ -723,7 +722,7 @@ interface QuestTemplate {
   id: string;
   period: 'daily' | 'weekly' | 'story';
   metric: 'sessions' | 'focusMinutes' | 'captures' | 'captureType' | 'hatch' | 'streakDays';
-  filter?: { categoryId?: string; type?: TypeId };
+  filter?: { type?: TypeId };     // (reemplazado: categoryId eliminado)
   target: number;
   reward: { coins?: number; items?: Record<string, number>; egg?: boolean };
 }
@@ -756,7 +755,6 @@ interface RewardConfig {
   shinyRate: number;              // 0.01
   encounterChance: number;        // 1.0 (por sesión completada)
   encounterTtlHours: number;      // 24
-  throwsPerEncounter: number;     // 3
   eggDropChance: number;          // 0.10
   pityThreshold: number;          // 15
   regionPace: number;             // 1.0
@@ -770,7 +768,7 @@ interface RewardConfig {
 |---|---|
 | casual | Sin penalización por abandono, `regionPace` 0.7, `shinyRate` 1/50 |
 | normal | Valores por defecto |
-| hardcore | Nuzlocke ON, `regionPace` 1.5, `shinyRate` 1/400, `throwsPerEncounter` 2 |
+| hardcore | Nuzlocke ON, `regionPace` 1.5, `shinyRate` 1/400 |
 
 La pantalla de ajustes permite editar cada valor con descripción, y botón "restablecer". Cambiar el preset **no** reescribe el historial.
 
@@ -806,7 +804,7 @@ Notas de contraste (verificar con una herramienta WCAG antes de fijar):
 
 ### 9.3 Colores por tipo
 
-Usados en categorías, insignias de tipo, fondos de tarjetas y estados. Siempre acompañados de **icono + texto**.
+Usados en insignias de tipo, fondos de tarjetas y estados. Siempre acompañados de **icono + texto**.
 
 | Tipo | Color sugerido |
 |---|---|
@@ -850,7 +848,7 @@ Autoalojar las fuentes (no depender de CDN) para que funcione offline.
 | `/quests` | Misiones y logros | Diarias, semanales, historia, logros |
 | `/shop` | Tienda e inventario | Compra, uso de ítems, cosméticos |
 | `/eggs` | Huevos y expediciones | Incubadora, expediciones activas |
-| `/stats` | Estadísticas | Heatmap estilo GitHub, horas por categoría, racha, gráficos |
+| `/stats` | Estadísticas | Heatmap estilo GitHub, horas por día/semana, racha, gráficos |
 | `/settings` | Ajustes | Timer, recompensas, temas, datos (export/import), modos |
 
 ### 9.7 Pantalla principal (Focus) — estructura
@@ -867,7 +865,6 @@ Autoalojar las fuentes (no depender de CDN) para que funcione offline.
 │          24:13               │  Jefe activo: Brock        │
 │  Sesión  ▓▓▓▓▓▓░░░░ 3/4      │  HP ▓▓▓▓▓░░░░ 62/120 min   │
 │                              │  ───────────────────────   │
-│  Categoría: [Estudiar ▾]     │  Misiones                  │
 │  [ ▶ Start ] [ ⏸ Pause ] [ ■ Finish ] │ ✓ 3 pomodoros 2/3  │
 └──────────────────────────────┴────────────────────────────┘
 ```
@@ -887,8 +884,8 @@ Elementos obligatorios: Pokémon protagonista, nivel + barra XP, timer grande, p
 - Animaciones cortas (< 400 ms) y desactivables.
 
 ### 9.10 Responsive
-- Mobile first (≥ 360 px): layout de una columna, barra de navegación inferior.
-- Desktop (≥ 1024 px): dos columnas en Focus, navegación lateral.
+- Mobile first (≥ 360 px): layout de una columna, barra de navegación **arriba**, sticky bajo el logo.
+- Desktop (≥ 1024 px): dos columnas en Focus, navegación superior.
 - Objetivos táctiles ≥ 44 px.
 
 ### 9.11 Atajos de teclado (desktop)
@@ -1015,12 +1012,12 @@ Cada fase termina con algo usable.
 
 ### Fase 1 — MVP (timer + encuentro + captura)
 - Timer con máquina de estados y persistencia de sesión activa.
-- Categorías, calidad de sesión, encuentro tras sesión, captura, colección básica.
+- ~~Categorías,~~ calidad de sesión, encuentro tras sesión, captura, colección básica. (reemplazado: sin categorías.)
 - Pantalla Focus + resumen post-sesión + export/import JSON.
 - **Hecho cuando:** puedes completar una sesión, capturar un Pokémon y verla en la Pokédex tras recargar.
 
 ### Fase 2 — Progresión
-- XP, niveles (curvas por `growth_rate`), compañero, equipo.
+- XP, niveles (curva única `n³`, §7.1), compañero, equipo.
 - Evoluciones, monedas, tienda, inventario, rachas.
 - **Hecho cuando:** un Pokémon sube de nivel y evoluciona con las reglas de §7.5.
 
@@ -1032,7 +1029,7 @@ Cada fase termina con algo usable.
 
 ### Fase 4 — Profundidad
 - Huevos, expediciones, misiones, logros, shiny/pity, modos Nuzlocke/Strict.
-- Estadísticas con heatmap y gráficos por categoría.
+- Estadísticas con heatmap y gráficos por día/semana.
 - **Hecho cuando:** todas las mecánicas de §7 están implementadas.
 
 ### Fase 5 — Personalización y pulido

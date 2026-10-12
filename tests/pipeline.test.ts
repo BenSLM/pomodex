@@ -4,7 +4,7 @@ import { mulberry32 } from '../src/core/rng';
 import { applySessionRewards } from '../src/core/rewards/pipeline';
 import { DEFAULT_REWARD_CONFIG } from '../src/core/rewards/config';
 import { buildDataset, type CreatureSpecies, type EvolutionEdge } from '../src/core/dataset';
-import type { Category, GameState, SessionRecord } from '../src/core/types';
+import type { GameState, SessionRecord } from '../src/core/types';
 
 const species = (over: Partial<CreatureSpecies>): CreatureSpecies => ({
   id: 1,
@@ -34,10 +34,6 @@ const creatures = [
 const edges: EvolutionEdge[] = [{ chainId: 1, from: 1, to: 2, rule: { kind: 'level', level: 16 } }];
 const dataset = buildDataset(creatures, edges, {});
 
-const categories: Category[] = [
-  { id: 'study', name: 'Estudiar', icon: '📚', color: '#fff', affinityTypes: ['psychic'] },
-];
-
 function makeState(): GameState {
   return {
     profile: {
@@ -57,7 +53,7 @@ function makeState(): GameState {
 }
 
 const session = (over: Partial<SessionRecord> = {}): SessionRecord => ({
-  id: 's1', categoryId: 'study', mode: 'pomodoro',
+  id: 's1', mode: 'pomodoro',
   plannedMs: 25 * 60_000, focusedMs: 25 * 60_000, overtimeMs: 0,
   startedAt: 1_000_000, endedAt: 1_000_000 + 25 * 60_000,
   pauseCount: 0, distractionCount: 0, quality: 95, outcome: 'completed',
@@ -65,7 +61,7 @@ const session = (over: Partial<SessionRecord> = {}): SessionRecord => ({
 });
 
 const clock = new FakeClock(1_000_000 + 25 * 60_000);
-const deps = (seed = 42) => ({ rng: mulberry32(seed), clock, dataset, rolloverHour: 4, categories });
+const deps = (seed = 42) => ({ rng: mulberry32(seed), clock, dataset, rolloverHour: 4 });
 
 describe('pipeline de recompensas (§3.3 / §7)', () => {
   it('sesión perfecta: XP, monedas, ball y racha', () => {
@@ -100,6 +96,38 @@ describe('pipeline de recompensas (§3.3 / §7)', () => {
     expect([1, 2, 3]).toContain(a.summary.encounter!.speciesId);
     // el encuentro marca la especie como vista
     expect(a.state.dex.find((d) => d.speciesId === a.summary.encounter!.speciesId)?.seen).toBe(true);
+  });
+
+  it('A1: la calidad NO decide la validez (100 % tiempo, calidad 40 → válida, XP ×0.8, ball Poké)', () => {
+    const { summary } = applySessionRewards(makeState(), session({ quality: 40 }), DEFAULT_REWARD_CONFIG, deps());
+    expect(summary.valid).toBe(true);
+    expect(summary.quality).toBe('poor');
+    expect(summary.xpCompanion).toBe(200); // 25 min × 10 × 0.8 (Floja)
+    expect(summary.ballEarned).toBe('poke');
+    expect(summary.encounter).not.toBeNull();
+  });
+
+  it('A2: 85 % del tiempo es inválida aunque la calidad sea 100', () => {
+    const { summary, state } = applySessionRewards(
+      makeState(),
+      session({ focusedMs: 25 * 60_000 * 0.85, quality: 100 }),
+      DEFAULT_REWARD_CONFIG,
+      deps(),
+    );
+    expect(summary.valid).toBe(false);
+    expect(summary.xpCompanion).toBe(0);
+    expect(summary.encounter).toBeNull();
+    expect(state.streak.current).toBe(0);
+  });
+
+  it('A3: justo en el umbral (90 %) es válida', () => {
+    const { summary } = applySessionRewards(
+      makeState(),
+      session({ focusedMs: 25 * 60_000 * 0.9, quality: 100 }),
+      DEFAULT_REWARD_CONFIG,
+      deps(),
+    );
+    expect(summary.valid).toBe(true);
   });
 
   it('sesión inválida (<10 min) no da recompensas', () => {

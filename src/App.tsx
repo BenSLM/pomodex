@@ -4,6 +4,7 @@ import { MotionConfig } from 'motion/react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from './data/db';
 import { ensureSeeded } from './data/game';
+import { pruneExpiredEncounters } from './data/actions';
 import { useTimerStore } from './app/stores/timerStore';
 import { Layout } from './ui/components/Layout';
 import { FocusPage } from './ui/pages/Focus';
@@ -17,7 +18,9 @@ export function App() {
   const settings = useLiveQuery(() => db.settings.get('me'), []);
 
   useEffect(() => {
-    void ensureSeeded().then(() => useTimerStore.getState().init());
+    void ensureSeeded()
+      .then(() => pruneExpiredEncounters(Date.now()))
+      .then(() => useTimerStore.getState().init());
   }, []);
 
   useEffect(() => {

@@ -17,7 +17,7 @@ const timer: TimerSettings = { focusMin: 25, breakMin: 5, longBreakMin: 15, cycl
 const cfg = DEFAULT_REWARD_CONFIG;
 
 function fresh(clock = new FakeClock(1_000_000)) {
-  const s = startSession({ categoryId: 'study', mode: 'pomodoro', timer, now: clock.now(), id: 's1' });
+  const s = startSession({ mode: 'pomodoro', timer, now: clock.now(), id: 's1' });
   return { clock, s };
 }
 
@@ -60,7 +60,7 @@ describe('máquina de estados del timer (§6)', () => {
   });
 
   it('el modo flow acumula overtime', () => {
-    const s = startSession({ categoryId: 'study', mode: 'flow', timer, now: 0, id: 'f1' });
+    const s = startSession({ mode: 'flow', timer, now: 0, id: 'f1' });
     expect(overtimeMs(s, 30 * 60_000)).toBe(5 * 60_000);
     const rec = finishSession(s, 30 * 60_000, cfg, { strictFocus: false });
     expect(rec.outcome).toBe('completed');

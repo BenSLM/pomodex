@@ -1,7 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 import type {
   ActiveSession,
-  Category,
   DexEntry,
   Egg,
   Encounter,
@@ -27,7 +26,6 @@ export class FocusDb extends Dexie {
   dex!: Table<DexEntry, number>;
   sessions!: Table<SessionRecord, string>;
   activeSession!: Table<ActiveSession, string>;
-  categories!: Table<Category, string>;
   eggs!: Table<Egg, string>;
   encounters!: Table<Encounter, string>;
   inventory!: Table<Inventory, string>;
@@ -58,6 +56,11 @@ export class FocusDb extends Dexie {
       achievements: 'id',
       settings: 'id',
       meta: 'key',
+    });
+    // v2 — se elimina el concepto de categorías (la app es solo el timer).
+    this.version(2).stores({
+      categories: null,
+      sessions: 'id, startedAt, outcome',
     });
   }
 }

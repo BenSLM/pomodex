@@ -6,7 +6,6 @@ export function plannedMsFor(_mode: SessionMode, timer: TimerSettings): number {
 }
 
 export function startSession(params: {
-  categoryId: string;
   mode: SessionMode;
   timer: TimerSettings;
   now: number;
@@ -16,7 +15,6 @@ export function startSession(params: {
   return {
     id: params.id,
     state: 'focusing',
-    categoryId: params.categoryId,
     goalId: params.goalId,
     mode: params.mode,
     plannedMs: plannedMsFor(params.mode, params.timer),
@@ -78,7 +76,6 @@ export function finishSession(
     opts.outcome ?? (ratio >= config.completionThreshold ? 'completed' : 'abandoned');
   return {
     id: session.id,
-    categoryId: session.categoryId,
     goalId: session.goalId,
     mode: session.mode,
     plannedMs: session.plannedMs,

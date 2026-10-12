@@ -48,9 +48,9 @@ export function TeamPage() {
     const species = dataset.byId.get(c.speciesId);
     if (!species) return { level: c.level, value: 0, max: 1 };
     const scale = settings?.rewards.xpScale ?? 0.05;
-    const level = levelFromXp(species.growthRate, c.xp, scale);
-    const base = xpForLevel(species.growthRate, level, scale);
-    const next = xpForLevel(species.growthRate, level + 1, scale);
+    const level = levelFromXp(c.xp, scale);
+    const base = xpForLevel(level, scale);
+    const next = xpForLevel(level + 1, scale);
     return { level, value: c.xp - base, max: Math.max(1, next - base) };
   };
 

@@ -11,8 +11,9 @@
 | 2 — Progresión | ✅ hecho | XP/nivel/evolución, compañero y equipo, economía+tienda, rachas, pantallas Team/Shop/Settings. |
 | 3–6 | ⬜ pendiente | Ver secciones de abajo. |
 
-- Verificación actual: `npx tsc -b` limpio, `npm test` 38/38, `npm run build` OK (bundle ~288 kB gzip; code-splitting en Fase 5).
+- Verificación actual: `npx tsc -b` limpio, `npm test` 50/50, `npm run build` OK (bundle ~288 kB gzip; code-splitting en Fase 5). Pulido de Fases 0–2 en curso (`prompts.md`).
 - Desviaciones menores: Incienso = 1 ítem = 5 cargas (`Inventory.incenseCharges`); solo región Kanto en encuentros.
+- Desviaciones del pulido (Prompt 1): sin categorías; curva de XP única `n³` (se ignora `growth_rate`); lanzamientos ilimitados (se sale con "Dejar ir" o al expirar el TTL); navbar **arriba** (no inferior).
 
 ---
 
@@ -29,10 +30,10 @@
 - ~~Máquina de estados del timer (idle/focusing/paused/completed/break/abandoned) cálculo por timestamps.~~
 - ~~Persistencia de `ActiveSession` en Dexie y reconstrucción tras recarga.~~
 - ~~Calidad de sesión (pausas, distracciones con Page Visibility API) y validación (≥ 90 %, `minValidMinutes`).~~
-- ~~Categorías de tarea por defecto con tipos afines.~~
+- ~~Categorías de tarea por defecto con tipos afines.~~ (reemplazado: categorías eliminadas en el pulido.)
 - ~~Pipeline de recompensas mínimo: XP, monedas, encuentro (§3.3 con firma `applySessionRewards`).~~
-- ~~Sistema de rareza y tirada de encuentro (pesos, pity timer, pool por región/afinidad).~~
-- ~~Captura: fórmula de probabilidad, 3 lanzamientos, balls, creación de `OwnedCreature` + `DexEntry`.~~
+- ~~Sistema de rareza y tirada de encuentro (pesos, pity timer, pool por región/afinidad).~~ (reemplazado: pool por región + reglas de rareza/pity/incienso; afinidad eliminada.)
+- ~~Captura: fórmula de probabilidad, 3 lanzamientos, balls, creación de `OwnedCreature` + `DexEntry`.~~ (reemplazado: lanzamientos ilimitados; un fallo solo resta 1 ball y el Pokémon no huye.)
 - ~~Pantalla Focus (layout de §9.7) + modal resumen post-sesión + pantalla de encuentro.~~
 - ~~Pokédex/Colección básica con grid y filtros.~~
 - ~~Export/import JSON con validación Zod y backup previo.~~
@@ -41,7 +42,7 @@
 
 ## ~~Fase 2 — Progresión~~ ✅
 - ~~XP por sesión con multiplicadores de calidad y racha.~~
-- ~~Curvas de nivel por `growth_rate` con `XP_SCALE = 0.05` (tablas erratic/fluctuating incluidas).~~
+- ~~Curvas de nivel por `growth_rate` con `XP_SCALE = 0.05` (tablas erratic/fluctuating incluidas).~~ (reemplazado: curva única `n³` escalada por `xpScale`.)
 - ~~Compañero, equipo (máx 6) y amistad (reacciones del sprite).~~
 - ~~Evoluciones: normalización de reglas (level/item/friendship/special), ramificadas, confirmación.~~
 - ~~Economía: monedas, tienda (balls, pociones, piedras, etc.), inventario.~~
@@ -64,7 +65,7 @@
 - Logros declarativos evaluados al final del pipeline.
 - Shiny (`shinyRate`), pity garantizado y shiny por racha de 30 días.
 - Modos opcionales: Nuzlocke, Strict focus, casual.
-- Estadísticas: heatmap, horas por categoría, gráficos.
+- Estadísticas: heatmap, horas por día/semana, gráficos.
 - **Hecho cuando:** todas las mecánicas de §7 están implementadas y testeadas.
 
 ## Fase 5 — Personalización y pulido
@@ -75,7 +76,7 @@
 - Audio (efectos + cries opcionales) y notificaciones locales.
 - Accesibilidad: contraste AA, teclado, `role="timer"` con anuncios moderados, `prefers-reduced-motion`.
 - i18n (es/en) y atajos de teclado.
-- Responsive mobile-first + navegación inferior/lateral.
+- Responsive mobile-first + navegación superior (sticky bajo el logo).
 - Resto de regiones: Johto → Paldea.
 - Virtualización de la Pokédex y sprites lazy.
 - **Hecho cuando:** instalable, offline, 4+ temas y 3 estilos de UI.

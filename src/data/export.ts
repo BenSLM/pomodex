@@ -1,13 +1,9 @@
 import { z } from 'zod';
 import { db } from './db';
 import { defaultSettings } from './defaults';
-import type { ActiveSession, Category, DexEntry, Egg, Encounter, Goal, Inventory, Profile, QuestInstance, SessionRecord, Settings, StreakState, PendingEvolution } from '../core/types';
+import type { ActiveSession, DexEntry, Egg, Encounter, Goal, Inventory, Profile, QuestInstance, SessionRecord, Settings, StreakState, PendingEvolution } from '../core/types';
 
 const rarity = z.enum(['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythical']);
-const typeId = z.enum([
-  'normal', 'fire', 'water', 'electric', 'grass', 'ice', 'fighting', 'poison',
-  'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy',
-]);
 const ballId = z.enum(['poke', 'great', 'ultra', 'master']);
 const itemId = z.enum([
   'potion', 'revive', 'streakShield', 'incense', 'berry',
@@ -38,7 +34,6 @@ const ownedCreatureSchema = z.object({
   friendship: z.number(),
   caughtAt: z.number(),
   caughtWith: ballId,
-  categoryId: z.string().optional(),
   faintedUntil: z.number().optional(),
   onExpeditionId: z.string().optional(),
 });
@@ -66,7 +61,6 @@ const rewardConfigSchema = z.object({
   shinyRate: z.number(),
   encounterChance: z.number(),
   encounterTtlHours: z.number(),
-  throwsPerEncounter: z.number(),
   eggDropChance: z.number(),
   pityThreshold: z.number(),
   regionPace: z.number(),
@@ -97,7 +91,6 @@ const settingsSchema = z.object({
 
 const sessionRecordSchema = z.object({
   id: z.string(),
-  categoryId: z.string(),
   goalId: z.string().optional(),
   mode: z.enum(['pomodoro', 'flow']),
   plannedMs: z.number(),
@@ -117,7 +110,6 @@ const sessionRecordSchema = z.object({
 const activeSessionSchema = z.object({
   id: z.string(),
   state: z.enum(['focusing', 'paused', 'break']),
-  categoryId: z.string(),
   goalId: z.string().optional(),
   mode: z.enum(['pomodoro', 'flow']),
   plannedMs: z.number(),
@@ -126,14 +118,6 @@ const activeSessionSchema = z.object({
   pausedAccumulatedMs: z.number(),
   pauseCount: z.number(),
   distractionCount: z.number(),
-});
-
-const categorySchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  icon: z.string(),
-  color: z.string(),
-  affinityTypes: z.array(typeId),
 });
 
 const eggSchema = z.object({
@@ -149,7 +133,7 @@ const encounterSchema = z.object({
   speciesId: z.number(),
   shiny: z.boolean(),
   level: z.number(),
-  throwsLeft: z.number(),
+  attempts: z.number().optional(),
   expiresAt: z.number(),
 });
 
@@ -163,7 +147,6 @@ const inventorySchema = z.object({
 const goalSchema = z.object({
   id: z.string(),
   name: z.string(),
-  categoryId: z.string().optional(),
   targetMinutes: z.number(),
   progressMinutes: z.number(),
   rewardBadge: z.string().optional(),
@@ -195,7 +178,6 @@ export const backupSchema = z.object({
     dex: z.array(dexEntrySchema),
     sessions: z.array(sessionRecordSchema),
     activeSession: activeSessionSchema.nullable(),
-    categories: z.array(categorySchema),
     eggs: z.array(eggSchema),
     encounters: z.array(encounterSchema),
     inventory: inventorySchema,
@@ -210,14 +192,13 @@ export const backupSchema = z.object({
 export type Backup = z.infer<typeof backupSchema>;
 
 export async function exportBackup(): Promise<Backup> {
-  const [profile, creatures, dex, sessions, active, categories, eggs, encounters, inventory, goals, quests, settings] =
+  const [profile, creatures, dex, sessions, active, eggs, encounters, inventory, goals, quests, settings] =
     await Promise.all([
       db.profile.get('me'),
       db.creatures.toArray(),
       db.dex.toArray(),
       db.sessions.toArray(),
       db.activeSession.toCollection().first(),
-      db.categories.toArray(),
       db.eggs.toArray(),
       db.encounters.toArray(),
       db.inventory.get('me'),
@@ -239,7 +220,6 @@ export async function exportBackup(): Promise<Backup> {
       dex,
       sessions: sessions.map((s) => ({ ...s, xp: s.xp ?? 0, coins: s.coins ?? 0 })),
       activeSession: active ?? null,
-      categories,
       eggs,
       encounters,
       inventory: inventory ?? { id: 'me', balls: {}, items: {} },
@@ -262,7 +242,7 @@ export async function importBackup(backup: Backup): Promise<Backup> {
   const t = backup.tables;
   await db.transaction(
     'rw',
-    [db.profile, db.creatures, db.dex, db.sessions, db.activeSession, db.categories, db.eggs, db.encounters, db.inventory, db.goals, db.quests, db.settings, db.meta],
+    [db.profile, db.creatures, db.dex, db.sessions, db.activeSession, db.eggs, db.encounters, db.inventory, db.goals, db.quests, db.settings, db.meta],
     async () => {
       await db.profile.put(t.profile as Profile);
       await db.creatures.bulkPut(t.creatures as never[]);
@@ -270,7 +250,6 @@ export async function importBackup(backup: Backup): Promise<Backup> {
       await db.sessions.bulkPut(t.sessions as SessionRecord[]);
       await db.activeSession.clear();
       if (t.activeSession) await db.activeSession.put(t.activeSession as ActiveSession);
-      await db.categories.bulkPut(t.categories as Category[]);
       await db.eggs.clear();
       await db.eggs.bulkPut(t.eggs as Egg[]);
       await db.encounters.bulkPut(t.encounters as Encounter[]);

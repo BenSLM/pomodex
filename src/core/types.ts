@@ -43,7 +43,6 @@ export interface OwnedCreature {
   friendship: number;
   caughtAt: number;
   caughtWith: BallId;
-  categoryId?: string;
   faintedUntil?: number;
   onExpeditionId?: string;
 }
@@ -57,17 +56,8 @@ export interface DexEntry {
   firstCaughtAt?: number;
 }
 
-export interface Category {
-  id: string;
-  name: string;
-  icon: string;
-  color: string;
-  affinityTypes: TypeId[];
-}
-
 export interface SessionRecord {
   id: string;
-  categoryId: string;
   goalId?: string;
   mode: SessionMode;
   plannedMs: number;
@@ -87,7 +77,6 @@ export interface SessionRecord {
 export interface ActiveSession {
   id: string;
   state: 'focusing' | 'paused' | 'break';
-  categoryId: string;
   goalId?: string;
   mode: SessionMode;
   plannedMs: number;
@@ -111,7 +100,8 @@ export interface Encounter {
   speciesId: number;
   shiny: boolean;
   level: number;
-  throwsLeft: number;
+  /** Lanzamientos ya realizados (informativo). Los intentos son ilimitados. */
+  attempts?: number;
   expiresAt: number;
 }
 
@@ -137,7 +127,6 @@ export interface PendingEvolution {
 export interface Goal {
   id: string;
   name: string;
-  categoryId?: string;
   targetMinutes: number;
   progressMinutes: number;
   rewardBadge?: string;
@@ -207,7 +196,6 @@ export interface RewardConfig {
   shinyRate: number;
   encounterChance: number;
   encounterTtlHours: number;
-  throwsPerEncounter: number;
   eggDropChance: number;
   pityThreshold: number;
   regionPace: number;

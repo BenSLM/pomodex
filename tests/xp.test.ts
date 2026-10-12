@@ -1,40 +1,36 @@
 import { describe, expect, it } from 'vitest';
 import { levelFromXp, rawXpForLevel, sessionXp, xpForLevel } from '../src/core/xp';
-import type { GrowthRate } from '../src/core/types';
 
-const RATES: GrowthRate[] = ['fast', 'medium-fast', 'medium-slow', 'slow', 'erratic', 'fluctuating'];
-
-describe('curvas de experiencia (§7.1)', () => {
-  it('totales canónicos al nivel 100 (antes de escala)', () => {
-    expect(rawXpForLevel('fast', 100)).toBe(800_000);
-    expect(rawXpForLevel('medium-fast', 100)).toBe(1_000_000);
-    expect(rawXpForLevel('slow', 100)).toBe(1_250_000);
-    expect(rawXpForLevel('erratic', 100)).toBe(600_000);
-    expect(rawXpForLevel('fluctuating', 100)).toBe(1_640_000);
-    expect(rawXpForLevel('medium-slow', 100)).toBe(1_059_860);
+describe('curva de experiencia única (§7.1)', () => {
+  it('curva medium: XP total bruta = n³', () => {
+    expect(rawXpForLevel(50)).toBe(125_000);
+    expect(rawXpForLevel(100)).toBe(1_000_000);
+    expect(rawXpForLevel(1)).toBe(1);
   });
 
-  it('XP_SCALE = 0.05: nivel 50 medium-fast ≈ 6250 XP (referencia del SPECS)', () => {
-    expect(xpForLevel('medium-fast', 50)).toBe(6_250);
-    expect(xpForLevel('medium-fast', 100)).toBe(50_000);
+  it('xpScale = 0.05: nivel 50 = 6250 XP, nivel 100 = 50 000 XP', () => {
+    expect(xpForLevel(50)).toBe(6_250);
+    expect(xpForLevel(100)).toBe(50_000);
+    expect(xpForLevel(1)).toBe(0);
   });
 
-  it('levelFromXp recupera el nivel exacto en los límites', () => {
-    for (const rate of RATES) {
-      for (const n of [1, 2, 10, 50, 99, 100]) {
-        expect(levelFromXp(rate, xpForLevel(rate, n))).toBe(n);
-      }
+  it('levelFromXp(xpForLevel(n)) === n (sin floor, roundtrip exacto)', () => {
+    for (const n of [1, 2, 10, 50, 99, 100]) {
+      expect(levelFromXp(xpForLevel(n))).toBe(n);
     }
   });
 
-  it('las curvas son estrictamente crecientes', () => {
-    for (const rate of RATES) {
-      let prev = -1;
-      for (let n = 1; n <= 100; n++) {
-        const v = rawXpForLevel(rate, n);
-        expect(v).toBeGreaterThan(prev);
-        prev = v;
-      }
+  it('respeta un xpScale distinto (0.25 → Prompt 2)', () => {
+    expect(xpForLevel(50, 0.25)).toBe(31_250);
+    expect(levelFromXp(31_250, 0.25)).toBe(50);
+  });
+
+  it('la curva es estrictamente creciente (niveles 1-100, escala 0.25)', () => {
+    let prev = -1;
+    for (let n = 1; n <= 100; n++) {
+      const v = xpForLevel(n, 0.25);
+      expect(v).toBeGreaterThan(prev);
+      prev = v;
     }
   });
 

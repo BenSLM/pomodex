@@ -23,14 +23,12 @@ export function FocusPage() {
   const { active, summary, breakEndsAt, cycleCount, start, pause, resume, finish, abandon, dismissSummary, markDistraction } =
     useTimerStore();
   const [now, setNow] = useState(Date.now());
-  const [categoryId, setCategoryId] = useState(() => localStorage.getItem('pomodex.category') ?? 'study');
   const [mode, setMode] = useState<SessionMode>('pomodoro');
   const [encounter, setEncounter] = useState<Encounter | null>(null);
   const [confirmAbandon, setConfirmAbandon] = useState(false);
 
   const profile = useLiveQuery(() => db.profile.get('me'), []);
   const creature = useLiveQuery(() => (profile?.companionId ? db.creatures.get(profile.companionId) : undefined), [profile?.companionId]);
-  const categories = useLiveQuery(() => db.categories.toArray(), []);
   const settings = useLiveQuery(() => db.settings.get('me'), []);
   const pendingEncounters = useLiveQuery(() => db.encounters.toArray(), []);
   const pendingEvolutions = useLiveQuery(() => db.meta.get('pendingEvolutions'), []);
@@ -86,16 +84,11 @@ export function FocusPage() {
     if (!creature) return null;
     const species = dataset.byId.get(creature.speciesId);
     if (!species) return null;
-    const level = levelFromXp(species.growthRate, creature.xp, settings?.rewards.xpScale ?? 0.05);
-    const base = xpForLevel(species.growthRate, level, settings?.rewards.xpScale ?? 0.05);
-    const next = xpForLevel(species.growthRate, level + 1, settings?.rewards.xpScale ?? 0.05);
+    const level = levelFromXp(creature.xp, settings?.rewards.xpScale ?? 0.05);
+    const base = xpForLevel(level, settings?.rewards.xpScale ?? 0.05);
+    const next = xpForLevel(level + 1, settings?.rewards.xpScale ?? 0.05);
     return { species, level, value: creature.xp - base, max: Math.max(1, next - base) };
   })();
-
-  const onCategoryChange = (id: string) => {
-    setCategoryId(id);
-    localStorage.setItem('pomodex.category', id);
-  };
 
   return (
     <div className="grid gap-4 sm:grid-cols-[2fr,1fr]">
@@ -143,32 +136,16 @@ export function FocusPage() {
 
         {!active ? (
           <div className="flex w-full flex-col gap-2">
-            <div className="flex gap-2">
-              <label className="flex-1 text-sm">
-                Categoría
-                <Select
-                  className="btn mt-1 w-full"
-                  value={categoryId}
-                  onChange={(e) => onCategoryChange(e.target.value)}
-                >
-                  {(categories ?? []).map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.icon} {c.name}
-                    </option>
-                  ))}
+            {settings?.modes.flowTimer && (
+              <label className="text-sm">
+                Modo
+                <Select className="btn mt-1 w-full" value={mode} onChange={(e) => setMode(e.target.value as SessionMode)}>
+                  <option value="pomodoro">Pomodoro</option>
+                  <option value="flow">Flow</option>
                 </Select>
               </label>
-              {settings?.modes.flowTimer && (
-                <label className="flex-1 text-sm">
-                  Modo
-                  <Select className="btn mt-1 w-full" value={mode} onChange={(e) => setMode(e.target.value as SessionMode)}>
-                    <option value="pomodoro">Pomodoro</option>
-                    <option value="flow">Flow</option>
-                  </Select>
-                </label>
-              )}
-            </div>
-            <Btn className="btn btn-primary w-full text-lg" onClick={() => void start(categoryId, mode)}>
+            )}
+            <Btn className="btn btn-primary w-full text-lg" onClick={() => void start(mode)}>
               ▶ Empezar
             </Btn>
           </div>

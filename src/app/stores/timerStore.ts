@@ -23,7 +23,7 @@ interface TimerState {
   summary: UiRewardSummary | null;
   bootstrapped: boolean;
   init: () => Promise<void>;
-  start: (categoryId: string, mode: SessionMode) => Promise<void>;
+  start: (mode: SessionMode) => Promise<void>;
   pause: () => Promise<void>;
   resume: () => Promise<void>;
   finish: () => Promise<void>;
@@ -66,10 +66,9 @@ export const useTimerStore = create<TimerState>((set, get) => ({
     set({ active: stored, bootstrapped: true });
   },
 
-  start: async (categoryId, mode) => {
+  start: async (mode) => {
     const settings = await getSettings();
     const active = startSession({
-      categoryId,
       mode,
       timer: settings.timer,
       now: Date.now(),

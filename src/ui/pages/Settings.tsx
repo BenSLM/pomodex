@@ -60,7 +60,6 @@ export function SettingsPage() {
     { key: 'minValidMinutes', label: 'Minutos mínimos válidos' },
     { key: 'completionThreshold', label: 'Umbral de completado (0-1)', step: 0.05 },
     { key: 'shinyRate', label: 'Probabilidad shiny', step: 0.001 },
-    { key: 'throwsPerEncounter', label: 'Lanzamientos por encuentro' },
     { key: 'streakMinMinutes', label: 'Minutos para racha' },
     { key: 'regionPace', label: 'Ritmo de regiones', step: 0.1 },
     { key: 'eggDropChance', label: 'Probabilidad de huevo', step: 0.01 },

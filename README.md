@@ -9,13 +9,13 @@
 ## Características
 
 ### Timer (el núcleo)
-- **Pomodoro clásico** (25/5, descanso largo tras 4 ciclos), **personalizado** por categoría y **flow** (el timer no se detiene: el overtime da bonus de rareza).
+- **Pomodoro clásico** (25/5, descanso largo tras 4 ciclos), **personalizado** y **flow** (el timer no se detiene: el overtime da bonus de rareza).
 - Cálculo por timestamps, a prueba de segundo plano y recargas: la sesión activa se persiste y se reconcilia al reabrir.
 - Calidad de sesión 0–100 (penaliza pausas y cambios de pestaña) que multiplica XP, daño y calidad de la ball obtenida.
 - Título de la pestaña con el tiempo restante: `24:13 · Nombre del compañero`.
 
 ### Progresión
-- **XP y niveles** con curvas clásicas por `growth_rate`, hasta nivel 100.
+- **XP y niveles** con curva única `n³` (el `growth_rate` de la especie se ignora), hasta nivel 100.
 - **Compañero y equipo** (máx 6): amistad, reacciones del sprite, apodos.
 - **Evoluciones** por nivel, piedra, amistad o regla especial (confirmables, con ramas tipo Eevee).
 - **Huevos** que eclosionan con minutos de foco reales.
@@ -24,9 +24,8 @@
 
 ### Encuentros y colección
 - Tras cada sesión completa: **encuentro** con pesos por rareza (common → mythical), pity timer a los 15 y shiny 1/100.
-- **Captura** con fórmula de probabilidad real, 3 lanzamientos y animación de sacudidas.
+- **Captura** con fórmula de probabilidad real, lanzamientos ilimitados y animación de sacudidas; puedes "Dejar ir" al Pokémon o esperar a que expire el encuentro.
 - **Pokédex** con filtros por generación, tipo, rareza y estado (visto/capturado/shiny).
-- Afinidad por categoría: estudiar atrae tipos psíquicos, programar atrae eléctricos, etc.
 
 ### Gimnasios, medallas y Liga
 - 13 jefes por región (8 gimnasios + 4 Alto Mando + Campeón), con HP medido en **minutos de foco**.
@@ -94,7 +93,7 @@ focus-trainer/
 | `/quests` | Misiones y logros |
 | `/shop` | Tienda e inventario |
 | `/eggs` | Incubadora y expediciones |
-| `/stats` | Heatmap, horas por categoría, racha |
+| `/stats` | Heatmap, horas por día/semana, racha |
 | `/settings` | Timer, recompensas, temas, datos, modos |
 
 ---

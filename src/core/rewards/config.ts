@@ -12,7 +12,6 @@ export const DEFAULT_REWARD_CONFIG: RewardConfig = {
   shinyRate: 0.01,
   encounterChance: 1.0,
   encounterTtlHours: 24,
-  throwsPerEncounter: 3,
   eggDropChance: 0.1,
   pityThreshold: 15,
   regionPace: 1.0,
@@ -38,7 +37,6 @@ export function presetConfig(preset: RewardConfig['preset']): RewardConfig {
         abandonCreditRatio: 0,
         regionPace: 1.5,
         shinyRate: 1 / 400,
-        throwsPerEncounter: 2,
       };
     case 'normal':
       return { ...DEFAULT_REWARD_CONFIG };

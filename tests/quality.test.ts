@@ -46,6 +46,7 @@ describe('calidad y validez de sesión (§6.4-§6.5)', () => {
     const cfg = DEFAULT_REWARD_CONFIG;
     const planned = 25 * 60_000;
     expect(isValidSession(planned * 0.95, planned, 'pomodoro', cfg)).toBe(true);
+    expect(isValidSession(planned * 0.9, planned, 'pomodoro', cfg)).toBe(true); // umbral exacto
     expect(isValidSession(planned * 0.89, planned, 'pomodoro', cfg)).toBe(false);
     expect(isValidSession(5 * 60_000, 10 * 60_000, 'pomodoro', cfg)).toBe(false);
   });

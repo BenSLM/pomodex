@@ -74,8 +74,8 @@ describe('lanzamientos ilimitados (§7.4)', () => {
     expect(r.creatureId).toBeTruthy();
     expect(await db.encounters.get('e1')).toBeUndefined();
     expect(await db.creatures.count()).toBe(1);
-    // el primer Pokémon pasa a compañero
-    expect((await db.profile.get('me'))!.companionId).toBe(r.creatureId);
+    // Prompt 5: capturar ya NO auto-asigna compañero (se elige el inicial aparte)
+    expect((await db.profile.get('me'))!.companionId).toBeNull();
   });
 
   it('releaseEncounter elimina el encuentro (Dejar ir)', async () => {

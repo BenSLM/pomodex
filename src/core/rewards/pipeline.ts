@@ -18,6 +18,7 @@ import { sessionCoins } from '../economy';
 import { updateStreak } from '../streak';
 import { encountersForSession, isEncounterExpired, rollEncounter } from '../encounter';
 import { availableEvolutions, sanitizePendingEvolutions } from '../evolution';
+import { wildCaptureLevel } from '../capture-level';
 
 export interface RewardSummary {
   valid: boolean;
@@ -245,7 +246,13 @@ export function applySessionRewards(
       id: uid(deps.rng),
       speciesId: roll.speciesId,
       shiny: roll.shiny,
-      level: 3 + deps.rng.int(0, 8),
+      level: wildCaptureLevel(
+        species,
+        config.wildLevelRange,
+        config.legendaryCaptureLevel,
+        deps.dataset,
+        (min, max) => deps.rng.int(min, max),
+      ),
       attempts: 0,
       expiresAt: now + config.encounterTtlHours * 3_600_000,
     };
@@ -287,13 +294,14 @@ export function createOwnedCreature(params: {
   shiny: boolean;
   dataset: Dataset;
   level?: number;
+  xp?: number;
 }): OwnedCreature {
   const species = getSpecies(params.dataset, params.speciesId);
   return {
     id: uid(params.rng),
     speciesId: params.speciesId,
     level: params.level ?? 3 + params.rng.int(0, 8),
-    xp: 0,
+    xp: params.xp ?? 0,
     shiny: params.shiny,
     friendship: species.baseHappiness,
     caughtAt: params.now,

@@ -11,13 +11,14 @@
 | 2 — Progresión | ✅ hecho | XP/nivel/evolución, compañero y equipo, economía+tienda, rachas, pantallas Team/Shop/Settings. Curva única recalibrada (Prompt 2): `xpScale` 0.25, pausa gratis. |
 | 3–6 | ⬜ pendiente | Ver secciones de abajo. |
 
-- Verificación actual: `npx tsc -b` limpio, `npm test` 85/85 (13 archivos), `npm run build` OK (bundle ~288 kB gzip; code-splitting en Fase 5). Pulido de Fases 0–2 en curso (`prompts.md`). Simulador con economía de balls.
+- Verificación actual: `npx tsc -b` limpio, `npm test` 100/100 (15 archivos), `npm run build` OK (bundle ~288 kB gzip; code-splitting en Fase 5). Pulido de Fases 0–2 en curso (`prompts.md`). Simulador con economía de balls.
 - `npm run simulate` (60 min × 2 sesiones/día): Nv.16 ~2 h, Nv.36 ~16 h, Nv.50 ~48 h, Nv.100 ~411 h; Kanto (4480 min de daño) ~75 h, compañero Nv.57.
 - Desviaciones menores: Incienso = 1 ítem = 5 cargas (`Inventory.incenseCharges`); solo región Kanto en encuentros.
 - Desviaciones del pulido (Prompt 1): sin categorías; curva de XP única `n³` (se ignora `growth_rate`); lanzamientos ilimitados (se sale con "Dejar ir" o al expirar el TTL); navbar **arriba** (no inferior).
 - Desviaciones del pulido (Prompt 2): `teamXpShare` se queda en 25 % (sin bonus de recuperación; el equipo se pone al día con caramelos, Prompt 4); `freePausesPerSession` (1 por defecto).
 - Desviaciones del pulido (Prompt 3): encuentros/balls/huevos **por bloques de 30 min** (hasta 3/sesión) con cola de pendientes (máx. 8); ítem **Señuelo** (+1 encuentro).
 - Desviaciones del pulido (Prompt 4): **caramelos de XP** (XS–XL, curan el atraso del equipo; tope = nivel del compañero, no al compañero); **liberar** da caramelos por rareza; **"liberar duplicados"** conserva el mejor por especie; **límite diario de caramelos** en tienda.
+- Desviaciones del pulido (Prompt 5): **elección de inicial** (Bulbasaur/Charmander/Squirtle, nivel 5) con pantalla de bienvenida; capturar ya no auto-asigna compañero (fallback: elegir uno si el backup no lo trae); **nivel coherente al capturar** (`minCaptureLevel` desde `evolutions.json`, legendarios/míticos a 50, XP inicial = `xpForLevel`).
 
 ---
 
@@ -67,6 +68,7 @@
 - Huevos: drop, incubadora (máx 3), progreso por minutos de foco, especie oculta. (Prompt 3: drop ya por bloque de tiempo.)
 - _(Prompt 3)_ Adelantado de Fase 1/4: encuentros/balls/huevos **por bloques de 30 min**, cola de pendientes (máx. 8) y **Señuelo**.
 - _(Prompt 4)_ Adelantado de Fase 2/4: **caramelos de XP** (dar/recibir con tope del compañero), **liberar por caramelos** y **liberar duplicados**, y **límite diario de compra de caramelos** en la tienda.
+- _(Prompt 5)_ Adelantado de Fase 1/2: **elección de inicial** y **nivel coherente al capturar** (mínimos por especie derivados de las evoluciones).
 - Expediciones (tiers 1/2/3) con recompensas y regla de foco vs tiempo de pared.
 - Misiones diarias/semanales/historia desde JSON declarativo + pantalla Quests.
 - Logros declarativos evaluados al final del pipeline.

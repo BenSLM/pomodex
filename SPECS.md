@@ -529,6 +529,7 @@ Durante el descanso se muestra el **panel de descanso** con acciones: resolver e
 **Caramelos de XP (Prompt 4):** XP base (`candyXp`, §8) XS 100 · S 800 · M 3 000 · L 10 000 · XL 30 000, escalada por `xpScale` (por defecto ×0.25 → XS 25 · S 200 · M 750 · L 2 500 · XL 7 500). El valor final nunca se guarda; se recalcula desde `RewardConfig`.
 
 ### 7.2 Compañero y amistad
+- **Inicial (Prompt 5):** en el primer arranque (sin Pokémon) se elige entre Bulbasaur, Charmander y Squirtle (`starterSpeciesIds = [1, 4, 7]`) a nivel `starterLevel = 5`, con confirmación y apodo opcional. Entra como compañero + equipo y con `DexEntry` capturado. Capturar un salvaje **ya no** auto-asigna compañero. Si se importa un backup con Pokémon pero sin compañero, se pide elegir uno de los que tenga.
 - Compañero = Pokémon activo en pantalla principal.
 - Amistad +1 por cada día en que fue compañero y hubo ≥ 1 sesión válida; +3 por baya; −5 si abandonas con él como compañero.
 - Reacciones del sprite: alegre (completar), triste (abandonar), dormida (inactividad > 24 h), celebrando (subida de nivel/evolución).
@@ -604,7 +605,8 @@ Ejemplos con Poké Ball: común (255) 90 %; rara (75) ~34 %; legendaria (3) ~11 
 
 - ~~3 lanzamientos por encuentro (configurable). Si fallan todos, huye.~~ (reemplazado: lanzamientos ilimitados; un fallo solo resta 1 ball y el Pokémon no huye. Se sale con "Dejar ir" o al expirar el TTL.)
 - Se muestra animación de sacudidas (1–3) según `p` para dar sensación de cercanía.
-- Captura exitosa → se crea `OwnedCreature` (nivel inicial = aleatorio 3–10, o por región), `DexEntry.caught = true`.
+- **Nivel al capturar (Prompt 5):** salvaje base = aleatorio en `wildLevelRange` (por defecto [3, 10]); si la especie es evolucionada, se eleva a `minCaptureLevel(speciesId)` (derivado de `evolutions.json`: nivel de la evolución por nivel, `fallbackLevel` 36 para piedra/amistad/especial, y nunca menor que el de su preevolución); legendarios y míticos entran a `legendaryCaptureLevel = 50`. La XP inicial del capturado es `xpForLevel(nivel final)`.
+- Captura exitosa → se crea `OwnedCreature` (nivel = regla anterior), `DexEntry.caught = true`.
 - ~~Duplicados: se aceptan (para equipo/expediciones). Opción de "liberar" a cambio de monedas/caramelos (+ XP al compañero).~~ (reemplazado: Prompt 4 — liberar da **caramelos de XP** según la rareza de la especie, §7.4.1; no da monedas ni XP directa al compañero.)
 
 #### 7.4.1 Liberar Pokémon y duplicados (Prompt 4)
@@ -804,6 +806,10 @@ interface RewardConfig {
   encounterBlockMinutes: number;  // 30
   maxEncountersPerSession: number;// 3
   maxPendingEncounters: number;   // 8
+  starterSpeciesIds: number[];    // [1, 4, 7] (Bulbasaur, Charmander, Squirtle)
+  starterLevel: number;           // 5
+  wildLevelRange: [number, number]; // [3, 10] (inclusive)
+  legendaryCaptureLevel: number;  // 50
   eggDropChance: number;          // 0.10 (por bloque)
   pityThreshold: number;          // 15
   regionPace: number;             // 1.0
@@ -893,6 +899,7 @@ Autoalojar las fuentes (no depender de CDN) para que funcione offline.
 
 | Ruta | Pantalla | Contenido clave |
 |---|---|---|
+| _(onboarding)_ | **Bienvenida / inicial** (Prompt 5) | Sin Pokémon: elegir Bulbasaur/Charmander/Squirtle con sprite, tipos y flavor; confirmación y apodo. Con Pokémon pero sin compañero (backup): elegir entre los propios. |
 | `/` | **Focus (principal)** | Compañero, nivel + XP, timer, progreso, acciones, datos del día |
 | `/collection` | Pokédex/Colección | Grid con filtros (generación, tipo, rareza, capturados/vistos), ficha detallada |
 | `/team` | Equipo | 6 slots, compañero, apodos, evolución, liberar |

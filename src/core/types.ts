@@ -214,6 +214,14 @@ export interface RewardConfig {
   maxEncountersPerSession: number;
   /** Máximo de encuentros pendientes; por encima, el más antiguo huye (§7.3). */
   maxPendingEncounters: number;
+  /** §7.2 — especies elegibles como inicial (Bulbasaur, Charmander, Squirtle). */
+  starterSpeciesIds: number[];
+  /** §7.2 — nivel con el que entra el inicial. */
+  starterLevel: number;
+  /** §7.4 — rango de nivel salvaje base [min, max] (inclusive). */
+  wildLevelRange: [number, number];
+  /** §7.4 — nivel fijo de legendarios y míticos salvajes. */
+  legendaryCaptureLevel: number;
   eggDropChance: number;
   pityThreshold: number;
   regionPace: number;

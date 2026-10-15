@@ -66,6 +66,8 @@ export function SettingsPage() {
     { key: 'maxEncountersPerSession', label: 'Máx. encuentros por sesión' },
     { key: 'maxPendingEncounters', label: 'Máx. encuentros pendientes' },
     { key: 'eggDropChance', label: 'Probabilidad de huevo', step: 0.01 },
+    { key: 'starterLevel', label: 'Nivel del inicial' },
+    { key: 'legendaryCaptureLevel', label: 'Nivel de legendarios salvajes' },
   ];
 
   return (

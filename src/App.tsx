@@ -12,10 +12,13 @@ import { CollectionPage } from './ui/pages/Collection';
 import { TeamPage } from './ui/pages/Team';
 import { ShopPage } from './ui/pages/Shop';
 import { SettingsPage } from './ui/pages/Settings';
+import { ChooseCompanionPage, WelcomePage } from './ui/pages/Welcome';
 
 export function App() {
   const bootstrapped = useTimerStore((s) => s.bootstrapped);
   const settings = useLiveQuery(() => db.settings.get('me'), []);
+  const profile = useLiveQuery(() => db.profile.get('me'), []);
+  const creatures = useLiveQuery(() => db.creatures.toArray(), []);
 
   useEffect(() => {
     void ensureSeeded()
@@ -38,8 +41,24 @@ export function App() {
     }
   }, [settings]);
 
-  if (!bootstrapped) {
+  if (!bootstrapped || !profile || !creatures || !settings) {
     return <div className="flex h-full items-center justify-center text-[var(--muted)]">Cargando…</div>;
+  }
+
+  // §7.2 — onboarding: sin Pokémon → elegir inicial; con Pokémon pero sin compañero → elegir uno.
+  if (creatures.length === 0) {
+    return (
+      <MotionConfig reducedMotion="user">
+        <WelcomePage />
+      </MotionConfig>
+    );
+  }
+  if (!profile.companionId) {
+    return (
+      <MotionConfig reducedMotion="user">
+        <ChooseCompanionPage />
+      </MotionConfig>
+    );
   }
 
   return (

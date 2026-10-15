@@ -1,13 +1,14 @@
 import { db } from './db';
-import { getSettings, loadGameState } from './game';
+import { getSettings } from './game';
 import { dataset } from './dataset';
-import type { BallId, CandySize, ItemId, PendingEvolution, Settings } from '../core/types';
+import type { BallId, CandySize, ItemId, OwnedCreature, PendingEvolution, Settings } from '../core/types';
 import { captureChance, shakesFor } from '../core/capture';
 import { applyEvolution, availableEvolutions, canEvolveWithItem } from '../core/evolution';
 import { isEncounterExpired } from '../core/encounter';
 import { mulberry32, type Rng } from '../core/rng';
 import { SystemClock, type Clock } from '../core/clock';
 import { createOwnedCreature } from '../core/rewards/pipeline';
+import { xpForLevel } from '../core/xp';
 import { dailyLimitFor, SHOP_CATALOG } from '../core/economy';
 import { dayKey } from '../core/streak';
 import { applyCandy, CANDY_ITEM, type CandyResult } from '../core/candies';
@@ -54,7 +55,7 @@ export async function throwBall(
   await db.inventory.put(inv);
 
   if (success) {
-    const state = await loadGameState();
+    const settings = await getSettings();
     const creature = createOwnedCreature({
       speciesId: encounter.speciesId,
       now,
@@ -63,6 +64,7 @@ export async function throwBall(
       shiny: encounter.shiny,
       dataset,
       level: encounter.level,
+      xp: xpForLevel(encounter.level, settings.rewards.xpScale),
     });
     await db.creatures.add(creature);
     const existing = await db.dex.get(encounter.speciesId);
@@ -75,13 +77,6 @@ export async function throwBall(
       firstCaughtAt: existing?.firstCaughtAt ?? now,
     });
     await db.encounters.delete(encounterId);
-    // primer Pokémon: convertirlo en compañero automáticamente
-    if (!state.profile.companionId) {
-      await db.profile.update('me', {
-        companionId: creature.id,
-        teamIds: [creature.id],
-      });
-    }
     return { success: true, shakes, creatureId: creature.id };
   }
 
@@ -192,6 +187,48 @@ export async function useIncense(): Promise<void> {
   inv.items.incense -= 1;
   inv.incenseCharges = (inv.incenseCharges ?? 0) + 5;
   await db.inventory.put(inv);
+}
+
+/** §7.2 — elige el inicial (Bulbasaur/Charmander/Squirtle) y lo fija como compañero y equipo. */
+export async function chooseStarter(
+  speciesId: number,
+  opts: { nickname?: string; clock?: Clock; rng?: Rng } = {},
+): Promise<OwnedCreature> {
+  const settings = await getSettings();
+  if (!settings.rewards.starterSpeciesIds.includes(speciesId)) {
+    throw new Error('Esa especie no es un inicial válido');
+  }
+  if ((await db.creatures.count()) > 0) throw new Error('Ya tienes Pokémon');
+  const clock = opts.clock ?? new SystemClock();
+  const now = clock.now();
+  const rng = opts.rng ?? mulberry32((now ^ speciesId) >>> 0);
+  const level = settings.rewards.starterLevel;
+  const creature = createOwnedCreature({
+    speciesId,
+    now,
+    ball: 'poke',
+    rng,
+    shiny: false,
+    dataset,
+    level,
+    xp: xpForLevel(level, settings.rewards.xpScale),
+  });
+  if (opts.nickname?.trim()) creature.nickname = opts.nickname.trim();
+
+  await db.transaction('rw', [db.creatures, db.dex, db.profile], async () => {
+    await db.creatures.add(creature);
+    const existing = await db.dex.get(speciesId);
+    await db.dex.put({
+      speciesId,
+      seen: true,
+      caught: true,
+      shinyCaught: false,
+      firstSeenAt: existing?.firstSeenAt ?? now,
+      firstCaughtAt: existing?.firstCaughtAt ?? now,
+    });
+    await db.profile.update('me', { companionId: creature.id, teamIds: [creature.id] });
+  });
+  return creature;
 }
 
 export async function setCompanion(creatureId: string): Promise<void> {

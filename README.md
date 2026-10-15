@@ -15,6 +15,7 @@
 - Título de la pestaña con el tiempo restante: `24:13 · Nombre del compañero`.
 
 ### Progresión
+- **Elección de inicial**: en el primer arranque eliges entre Bulbasaur, Charmander y Squirtle (nivel 5), con apodo opcional; pasa a ser tu compañero y primer miembro del equipo.
 - **XP y niveles** con curva única `n³` (el `growth_rate` de la especie se ignora), hasta nivel 100.
 - **Compañero y equipo** (máx 6): amistad, reacciones del sprite, apodos.
 - **Evoluciones** por nivel, piedra, amistad o regla especial (confirmables, con ramas tipo Eevee).
@@ -27,6 +28,7 @@
 ### Encuentros y colección
 - **Encuentros por bloques de 30 min** (hasta 3 por sesión, con una ball gratis y una tirada de huevo por bloque): una sesión larga rinde más que varias cortas. Cola de pendientes (máx. 8: el más antiguo huye) con pesos por rareza (common → mythical), pity timer a los 15 y shiny 1/100.
 - **Captura** con fórmula de probabilidad real, lanzamientos ilimitados y animación de sacudidas; puedes "Dejar ir" al Pokémon o esperar a que expire el encuentro.
+- **Nivel coherente**: los salvajes aparecen a un nivel acorde a su línea evolutiva (un Dragonite nunca por debajo del 55); los legendarios y míticos entran al 50.
 - **Pokédex** con filtros por generación, tipo, rareza y estado (visto/capturado/shiny).
 
 ### Gimnasios, medallas y Liga

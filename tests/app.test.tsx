@@ -9,6 +9,10 @@ describe('smoke: flujo del timer (E2E ligero)', () => {
   it('arranca, inicia una sesión, la termina y muestra el resumen', async () => {
     render(<App />);
 
+    // §7.2 — primer arranque: elegir inicial antes de llegar al timer
+    await userEvent.click(await screen.findByRole('button', { name: /Bulbasaur/ }));
+    await userEvent.click(await screen.findByRole('button', { name: /Confirmar compañero/ }));
+
     // arranque con datos sembrados
     const start = await screen.findByRole('button', { name: /Empezar/ });
     expect(await screen.findByText('HOY')).toBeInTheDocument();

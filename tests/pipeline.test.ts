@@ -46,7 +46,7 @@ function makeState(): GameState {
       { id: 'c2', speciesId: 3, level: 10, xp: 0, shiny: false, friendship: 70, caughtAt: 0, caughtWith: 'poke' },
     ],
     dex: [],
-    inventory: { id: 'me', balls: { poke: 5, great: 0, ultra: 0, master: 0 }, items: { potion: 1, streakShield: 1, incense: 0, lure: 0, berry: 0, revive: 0, fireStone: 0, waterStone: 0, thunderStone: 0, leafStone: 0, moonStone: 0, sunStone: 0, shinyStone: 0, duskStone: 0, dawnStone: 0, iceStone: 0, linkCable: 0 } },
+    inventory: { id: 'me', balls: { poke: 5, great: 0, ultra: 0, master: 0 }, items: { potion: 1, streakShield: 1, incense: 0, lure: 0, berry: 0, revive: 0, fireStone: 0, waterStone: 0, thunderStone: 0, leafStone: 0, moonStone: 0, sunStone: 0, shinyStone: 0, duskStone: 0, dawnStone: 0, iceStone: 0, linkCable: 0, candyXS: 0, candyS: 0, candyM: 0, candyL: 0, candyXL: 0 } },
     streak: { current: 0, best: 0, lastCreditedDay: null },
     pendingEvolutions: [],
     eggs: [],

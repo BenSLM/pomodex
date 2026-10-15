@@ -20,6 +20,9 @@ export const DEFAULT_REWARD_CONFIG: RewardConfig = {
   pityThreshold: 15,
   regionPace: 1.0,
   streakMinMinutes: 25,
+  candyXp: { xs: 100, s: 800, m: 3000, l: 10000, xl: 30000 },
+  releaseCandy: { common: 'xs', uncommon: 's', rare: 's', epic: 'm', legendary: 'xs', mythical: 'xs' },
+  shopDailyLimits: { candyXS: 5, candyS: 3, candyM: 1, candyL: 1 },
   qualityMult: { perfect: 1.25, good: 1.0, poor: 0.8 },
   rarityWeights: { common: 55, uncommon: 28, rare: 12, epic: 4.5, legendary: 0.4, mythical: 0.1 },
 };

@@ -13,9 +13,12 @@ export type RegionId =
 
 export type BallId = 'poke' | 'great' | 'ultra' | 'master';
 
+export type CandySize = 'xs' | 's' | 'm' | 'l' | 'xl';
+
 export type ItemId =
   | 'potion' | 'revive' | 'streakShield' | 'incense' | 'lure' | 'berry'
-  | 'fireStone' | 'waterStone' | 'thunderStone' | 'leafStone' | 'moonStone' | 'sunStone' | 'shinyStone' | 'duskStone' | 'dawnStone' | 'iceStone' | 'linkCable';
+  | 'fireStone' | 'waterStone' | 'thunderStone' | 'leafStone' | 'moonStone' | 'sunStone' | 'shinyStone' | 'duskStone' | 'dawnStone' | 'iceStone' | 'linkCable'
+  | 'candyXS' | 'candyS' | 'candyM' | 'candyL' | 'candyXL';
 
 export type SessionMode = 'pomodoro' | 'flow';
 
@@ -105,12 +108,19 @@ export interface Encounter {
   expiresAt: number;
 }
 
+/** Contador de compras del día lógico (§7.7); se reinicia solo al cambiar de día. */
+export interface ShopDaily {
+  day: string;
+  counts: Partial<Record<ItemId, number>>;
+}
+
 export interface Inventory {
   id: string;
   balls: Record<BallId, number>;
   items: Record<ItemId, number>;
   /** cargas restantes de incienso (1 ítem = 5 encuentros con rareza +, §7.3) */
   incenseCharges?: number;
+  shopDaily?: ShopDaily;
 }
 
 export interface StreakState {
@@ -208,6 +218,12 @@ export interface RewardConfig {
   pityThreshold: number;
   regionPace: number;
   streakMinMinutes: number;
+  /** §7.1/§7.7 — XP base de los caramelos (juegos oficiales); la real = base × xpScale. */
+  candyXp: Record<CandySize, number>;
+  /** §7.4 — caramelo obtenido al liberar un duplicado, por rareza. */
+  releaseCandy: Record<Rarity, CandySize>;
+  /** §7.7 — compra máxima por día lógico de cada caramelo. */
+  shopDailyLimits: { candyXS: number; candyS: number; candyM: number; candyL: number };
   qualityMult: { perfect: number; good: number; poor: number };
   rarityWeights: Record<Rarity, number>;
 }

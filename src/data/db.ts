@@ -62,6 +62,10 @@ export class FocusDb extends Dexie {
       categories: null,
       sessions: 'id, startedAt, outcome',
     });
+    // v3 — caramelos en el inventario y contador de compras diarias (Prompt 4).
+    this.version(3).stores({
+      inventory: 'id',
+    });
   }
 }
 

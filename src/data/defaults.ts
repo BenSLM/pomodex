@@ -25,6 +25,7 @@ export function defaultInventory(): Inventory {
       potion: 0, revive: 0, streakShield: 0, incense: 0, lure: 0, berry: 0,
       fireStone: 0, waterStone: 0, thunderStone: 0, leafStone: 0, moonStone: 0,
       sunStone: 0, shinyStone: 0, duskStone: 0, dawnStone: 0, iceStone: 0, linkCable: 0,
+      candyXS: 0, candyS: 0, candyM: 0, candyL: 0, candyXL: 0,
     },
     incenseCharges: 0,
   };

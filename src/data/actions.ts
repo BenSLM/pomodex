@@ -1,14 +1,17 @@
 import { db } from './db';
 import { getSettings, loadGameState } from './game';
 import { dataset } from './dataset';
-import type { BallId, ItemId, Settings } from '../core/types';
+import type { BallId, CandySize, ItemId, PendingEvolution, Settings } from '../core/types';
 import { captureChance, shakesFor } from '../core/capture';
-import { applyEvolution, canEvolveWithItem } from '../core/evolution';
+import { applyEvolution, availableEvolutions, canEvolveWithItem } from '../core/evolution';
 import { isEncounterExpired } from '../core/encounter';
 import { mulberry32, type Rng } from '../core/rng';
 import { SystemClock, type Clock } from '../core/clock';
 import { createOwnedCreature } from '../core/rewards/pipeline';
-import { SHOP_CATALOG } from '../core/economy';
+import { dailyLimitFor, SHOP_CATALOG } from '../core/economy';
+import { dayKey } from '../core/streak';
+import { applyCandy, CANDY_ITEM, type CandyResult } from '../core/candies';
+import { canRelease, duplicatePlan, releaseCandyFor, type DuplicatePlan } from '../core/release';
 
 export interface CatchResult {
   success: boolean;
@@ -100,23 +103,75 @@ export async function pruneExpiredEncounters(now: number): Promise<number> {
   return expired.length;
 }
 
-export async function buyItem(id: BallId | ItemId): Promise<void> {
+export async function buyItem(id: BallId | ItemId, deps: { clock?: Clock } = {}): Promise<void> {
   const item = SHOP_CATALOG.find((s) => s.id === id);
   if (!item) throw new Error('Ítem no disponible');
   const inv = await db.inventory.get('me');
   const profile = await db.profile.get('me');
   if (!inv || !profile) throw new Error('Sin datos');
   if (profile.coins < item.price) throw new Error('Monedas insuficientes');
+
+  const clock = deps.clock ?? new SystemClock();
+  const settings = await getSettings();
+  const today = dayKey(clock.now(), settings.dayRolloverHour);
+  const limit = dailyLimitFor(item.id, settings.rewards);
+
   await db.transaction('rw', [db.inventory, db.profile], async () => {
     const p = await db.profile.get('me');
     const i = await db.inventory.get('me');
     if (!p || !i) return;
+    if (p.coins < item.price) throw new Error('Monedas insuficientes');
+    const daily = i.shopDaily?.day === today ? i.shopDaily : { day: today, counts: {} };
+    const key = item.id as ItemId;
+    if (limit != null && i.shopDaily?.day === today && (i.shopDaily.counts[key] ?? 0) >= limit) {
+      throw new Error('Límite diario alcanzado');
+    }
     p.coins -= item.price;
     if (item.kind === 'ball') i.balls[item.id as BallId] += 1;
-    else i.items[item.id as ItemId] = (i.items[item.id as ItemId] ?? 0) + 1;
+    else i.items[key] = (i.items[key] ?? 0) + 1;
+    if (limit != null) {
+      daily.counts[key] = (daily.counts[key] ?? 0) + 1;
+      i.shopDaily = daily;
+    }
     await db.profile.put(p);
     await db.inventory.put(i);
   });
+}
+
+/** §7.7 — da un caramelo a un Pokémon (nunca al compañero; tope = nivel del compañero). */
+export async function giveCandy(creatureId: string, size: CandySize): Promise<CandyResult> {
+  const settings = await getSettings();
+  const profile = await db.profile.get('me');
+  const inv = await db.inventory.get('me');
+  if (!profile || !inv) throw new Error('Sin datos');
+  if (profile.companionId === creatureId) throw new Error('No puedes dar caramelos al compañero');
+  const item = CANDY_ITEM[size];
+  if ((inv.items[item] ?? 0) <= 0) throw new Error('No tienes ese caramelo');
+  const creature = await db.creatures.get(creatureId);
+  if (!creature) throw new Error('Pokémon no encontrado');
+  const companion = profile.companionId ? await db.creatures.get(profile.companionId) : undefined;
+  const companionLevel = companion?.level ?? 1;
+  const result = applyCandy(creature, size, settings.rewards, companionLevel);
+  if (result.xpGained <= 0) throw new Error('Ya está al nivel del compañero');
+
+  await db.transaction('rw', [db.creatures, db.inventory, db.meta], async () => {
+    await db.creatures.put(result.creature);
+    const i = await db.inventory.get('me');
+    if (i) {
+      i.items[item] = (i.items[item] ?? 0) - 1;
+      await db.inventory.put(i);
+    }
+    const evo = availableEvolutions(dataset, result.creature);
+    if (evo) {
+      const meta = await db.meta.get('pendingEvolutions');
+      const list = (meta?.value as PendingEvolution[] | undefined) ?? [];
+      const next = list.some((p) => p.creatureId === creatureId)
+        ? list.map((p) => (p.creatureId === creatureId ? evo : p))
+        : [...list, evo];
+      await db.meta.put({ key: 'pendingEvolutions', value: next });
+    }
+  });
+  return result;
 }
 
 export async function feedBerry(): Promise<void> {
@@ -164,22 +219,54 @@ export async function removeFromTeam(creatureId: string): Promise<void> {
   });
 }
 
-export async function releaseCreature(creatureId: string): Promise<void> {
+/** §7.4 — libera un Pokémon por caramelos según su rareza. No permite liberar protegidos. */
+export async function releaseCreature(creatureId: string): Promise<Partial<Record<ItemId, number>>> {
+  const settings = await getSettings();
   const profile = await db.profile.get('me');
-  if (!profile) return;
   const creature = await db.creatures.get(creatureId);
-  if (!creature) return;
-  await db.transaction('rw', [db.creatures, db.profile], async () => {
+  if (!profile || !creature) return {};
+  if (!canRelease(creature, profile, dataset)) throw new Error('No se puede liberar este Pokémon');
+  const size = releaseCandyFor(creature.speciesId, dataset, settings.rewards);
+  const item = size ? CANDY_ITEM[size] : null;
+  await db.transaction('rw', [db.creatures, db.profile, db.inventory], async () => {
     const p = await db.profile.get('me');
-    if (!p) return;
+    const i = await db.inventory.get('me');
     await db.creatures.delete(creatureId);
-    await db.profile.put({
-      ...p,
-      coins: p.coins + 15,
-      teamIds: p.teamIds.filter((id) => id !== creatureId),
-      companionId: p.companionId === creatureId ? null : p.companionId,
-    });
+    if (p) {
+      await db.profile.put({
+        ...p,
+        teamIds: p.teamIds.filter((id) => id !== creatureId),
+        companionId: p.companionId === creatureId ? null : p.companionId,
+      });
+    }
+    if (i && item) {
+      i.items[item] = (i.items[item] ?? 0) + 1;
+      await db.inventory.put(i);
+    }
   });
+  return item ? { [item]: 1 } : {};
+}
+
+/** §7.4 — libera duplicados de la caja conservando el mejor de cada especie (sin tocar equipo/shinies). */
+export async function releaseDuplicates(): Promise<DuplicatePlan> {
+  const settings = await getSettings();
+  const profile = await db.profile.get('me');
+  if (!profile) return { toRelease: [], candies: {} };
+  const creatures = await db.creatures.toArray();
+  const plan = duplicatePlan(creatures, profile, dataset, settings.rewards);
+  if (plan.toRelease.length === 0) return plan;
+  await db.transaction('rw', [db.creatures, db.inventory], async () => {
+    await db.creatures.bulkDelete(plan.toRelease.map((c) => c.id));
+    const i = await db.inventory.get('me');
+    if (i) {
+      for (const [size, n] of Object.entries(plan.candies)) {
+        const item = CANDY_ITEM[size as CandySize];
+        i.items[item] = (i.items[item] ?? 0) + (n ?? 0);
+      }
+      await db.inventory.put(i);
+    }
+  });
+  return plan;
 }
 
 export async function confirmEvolution(creatureId: string, toSpeciesId: number): Promise<void> {

@@ -349,7 +349,14 @@ interface Encounter {            // encuentro pendiente tras una sesión
 
 interface Inventory {
   balls: Record<BallId, number>;
-  items: Record<ItemId, number>; // potion, revive, incense, streakShield, stones...
+  items: Record<ItemId, number>; // potion, revive, incense, streakShield, lure, stones, candyXS..candyXL...
+  incenseCharges?: number;       // 1 incienso = 5 cargas (Prompt 2/3)
+  shopDaily?: ShopDaily;         // conteo de compras del día lógico (§7.7, Prompt 4)
+}
+
+interface ShopDaily {            // se reinicia solo al cambiar de día lógico
+  day: string;
+  counts: Partial<Record<ItemId, number>>;
 }
 
 interface GymProgress {
@@ -517,7 +524,9 @@ Durante el descanso se muestra el **panel de descanso** con acciones: resolver e
   Comprobado con `npm run simulate` y por los tests de `tests/progression.test.ts`. Cualquier cambio de balance debe re-ejecutar el script y actualizar los tests de hitos.
 - Nivel máximo 100. Opcional futuro: "estrellas de maestría" tras el 100.
 
-> Estas cifras son del compañero (recibe el 100 % de la XP). El resto del equipo recibe `teamXpShare` (25 %) y se pone al día con caramelos de XP (Prompt 4); no hay bonus de recuperación.
+> Estas cifras son del compañero (recibe el 100 % de la XP). El resto del equipo recibe `teamXpShare` (25 %) y se pone al día con caramelos de XP (§7.7); no hay bonus de recuperación.
+
+**Caramelos de XP (Prompt 4):** XP base (`candyXp`, §8) XS 100 · S 800 · M 3 000 · L 10 000 · XL 30 000, escalada por `xpScale` (por defecto ×0.25 → XS 25 · S 200 · M 750 · L 2 500 · XL 7 500). El valor final nunca se guarda; se recalcula desde `RewardConfig`.
 
 ### 7.2 Compañero y amistad
 - Compañero = Pokémon activo en pantalla principal.
@@ -596,7 +605,13 @@ Ejemplos con Poké Ball: común (255) 90 %; rara (75) ~34 %; legendaria (3) ~11 
 - ~~3 lanzamientos por encuentro (configurable). Si fallan todos, huye.~~ (reemplazado: lanzamientos ilimitados; un fallo solo resta 1 ball y el Pokémon no huye. Se sale con "Dejar ir" o al expirar el TTL.)
 - Se muestra animación de sacudidas (1–3) según `p` para dar sensación de cercanía.
 - Captura exitosa → se crea `OwnedCreature` (nivel inicial = aleatorio 3–10, o por región), `DexEntry.caught = true`.
-- Duplicados: se aceptan (para equipo/expediciones). Opción de "liberar" a cambio de monedas/caramelos (+ XP al compañero).
+- ~~Duplicados: se aceptan (para equipo/expediciones). Opción de "liberar" a cambio de monedas/caramelos (+ XP al compañero).~~ (reemplazado: Prompt 4 — liberar da **caramelos de XP** según la rareza de la especie, §7.4.1; no da monedas ni XP directa al compañero.)
+
+#### 7.4.1 Liberar Pokémon y duplicados (Prompt 4)
+
+- No se pueden liberar: **compañero**, miembros del **equipo**, **shinies**, legendarios ni míticos.
+- Liberar un Pokémon devuelve **caramelos de XP** según la rareza de su especie (`releaseCandy`, §8): común → XS, poco común/rara → S, épica → M, legendaria/mítica → XS.
+- **"Liberar duplicados":** por cada especie conserva el de **mayor nivel** (más cualquier shiny, que nunca se libera) y libera el resto de la **caja** (no toca equipo/compañero), acumulando los caramelos correspondientes. La UI muestra un resumen antes/durante.
 
 ### 7.5 Evoluciones
 
@@ -644,8 +659,16 @@ Tienda (precios por defecto):
 | Señuelo | 250 | +1 encuentro en la siguiente sesión válida (máx. `maxEncountersPerSession + 1`) |
 | Baya | 15 | +amistad al compañero |
 | Piedra evolutiva | 300 | Para evoluciones por objeto |
+| Caramelo XS | 15 | +XP al Pokémon (tope = nivel del compañero) |
+| Caramelo S | 60 | +XP al Pokémon |
+| Caramelo M | 200 | +XP al Pokémon |
+| Caramelo L | 650 | +XP al Pokémon |
 | Huevo | 250 | Huevo aleatorio |
 | Cosméticos | variable | Temas, fondos, marcos (§10) |
+
+**Caramelos de XP (Prompt 4):** su XP real es `candyXp[size] × xpScale` (§7.1/§8), así que reescala con la curva como todo lo demás. Tope: un Pokémon no puede superar el **nivel del compañero** (la XP sobrante se recorta). No se pueden dar al compañero. Se obtienen liberando duplicados (§7.4.1) o comprándolos.
+
+**Límite diario de compra:** caramelos limitados por día lógico (`shopDailyLimits`, §8): XS 5, S 3, M 1, L 1. El caramelo XL no se vende. Al cambiar de día lógico (§7.8) el conteo se reinicia. Las balls no tienen límite.
 
 ### 7.8 Rachas
 - Un día cuenta si hay ≥ `streakMinMinutes` (por defecto 25) de foco válido.
@@ -785,6 +808,9 @@ interface RewardConfig {
   pityThreshold: number;          // 15
   regionPace: number;             // 1.0
   streakMinMinutes: number;       // 25
+  candyXp: Record<CandySize, number>; // { xs:100, s:800, m:3000, l:10000, xl:30000 } (base; real = ×xpScale)
+  releaseCandy: Record<Rarity, CandySize>; // { common:'xs', uncommon:'s', rare:'s', epic:'m', legendary:'xs', mythical:'xs' }
+  shopDailyLimits: { candyXS: number; candyS: number; candyM: number; candyL: number }; // { 5, 3, 1, 1 }
   qualityMult: { perfect: number; good: number; poor: number };
   rarityWeights: Record<Rarity, number>;
 }

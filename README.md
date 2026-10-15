@@ -20,7 +20,9 @@
 - **Evoluciones** por nivel, piedra, amistad o regla especial (confirmables, con ramas tipo Eevee).
 - **Huevos** que eclosionan con minutos de foco reales.
 - **Rachas** con día lógico (rollover configurable) y escudos de racha.
-- **Economía**: monedas, tienda (balls, pociones, piedras evolutivas, incienso, Señuelo...), inventario.
+- **Caramelos de XP** (XS–XL): suben de nivel a la caja sin entrenar (tope = nivel del compañero); se ganan liberando duplicados o se compran (con límite diario).
+- **Liberar**: suelta un Pokémon por caramelos según su rareza; "liberar duplicados" conserva el mejor de cada especie.
+- **Economía**: monedas, tienda (balls, pociones, piedras evolutivas, incienso, Señuelo, caramelos...), inventario.
 
 ### Encuentros y colección
 - **Encuentros por bloques de 30 min** (hasta 3 por sesión, con una ball gratis y una tirada de huevo por bloque): una sesión larga rinde más que varias cortas. Cola de pendientes (máx. 8: el más antiguo huye) con pesos por rareza (common → mythical), pity timer a los 15 y shiny 1/100.

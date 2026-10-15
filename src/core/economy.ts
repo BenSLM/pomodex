@@ -22,6 +22,10 @@ export const SHOP_CATALOG: ShopItem[] = [
   { id: 'streakShield', kind: 'item', price: 150, name: { es: 'Escudo de racha', en: 'Streak shield' } },
   { id: 'incense', kind: 'item', price: 200, name: { es: 'Incienso', en: 'Incense' } },
   { id: 'lure', kind: 'item', price: 250, name: { es: 'Señuelo', en: 'Lure' } },
+  { id: 'candyXS', kind: 'item', price: 15, name: { es: 'Caramelo XS', en: 'XS Candy' } },
+  { id: 'candyS', kind: 'item', price: 60, name: { es: 'Caramelo S', en: 'S Candy' } },
+  { id: 'candyM', kind: 'item', price: 200, name: { es: 'Caramelo M', en: 'M Candy' } },
+  { id: 'candyL', kind: 'item', price: 650, name: { es: 'Caramelo L', en: 'L Candy' } },
   { id: 'berry', kind: 'item', price: 15, name: { es: 'Baya', en: 'Berry' } },
   { id: 'fireStone', kind: 'item', price: 300, name: { es: 'Piedra Fuego', en: 'Fire Stone' } },
   { id: 'waterStone', kind: 'item', price: 300, name: { es: 'Piedra Agua', en: 'Water Stone' } },
@@ -45,4 +49,20 @@ export const BALL_NAMES: Record<BallId, { es: string; en: string }> = {
 
 export function qualityBallLabel(q: QualityLabel): string {
   return q === 'perfect' ? 'ultra' : q === 'good' ? 'great' : 'poke';
+}
+
+/** §7.7 — límite de compra diaria de un ítem (solo los caramelos lo tienen). */
+export function dailyLimitFor(id: ItemId | BallId, config: RewardConfig): number | null {
+  switch (id) {
+    case 'candyXS':
+      return config.shopDailyLimits.candyXS;
+    case 'candyS':
+      return config.shopDailyLimits.candyS;
+    case 'candyM':
+      return config.shopDailyLimits.candyM;
+    case 'candyL':
+      return config.shopDailyLimits.candyL;
+    default:
+      return null;
+  }
 }

@@ -8,7 +8,9 @@ const ballId = z.enum(['poke', 'great', 'ultra', 'master']);
 const itemId = z.enum([
   'potion', 'revive', 'streakShield', 'incense', 'lure', 'berry',
   'fireStone', 'waterStone', 'thunderStone', 'leafStone', 'moonStone', 'sunStone', 'shinyStone', 'duskStone', 'dawnStone', 'iceStone', 'linkCable',
+  'candyXS', 'candyS', 'candyM', 'candyL', 'candyXL',
 ]);
+const candySize = z.enum(['xs', 's', 'm', 'l', 'xl']);
 
 const profileSchema = z.object({
   id: z.literal('me'),
@@ -69,6 +71,12 @@ const rewardConfigSchema = z.object({
   pityThreshold: z.number(),
   regionPace: z.number(),
   streakMinMinutes: z.number(),
+  candyXp: z.object({ xs: z.number(), s: z.number(), m: z.number(), l: z.number(), xl: z.number() })
+    .default({ xs: 100, s: 800, m: 3000, l: 10000, xl: 30000 }),
+  releaseCandy: z.record(rarity, candySize)
+    .default({ common: 'xs', uncommon: 's', rare: 's', epic: 'm', legendary: 'xs', mythical: 'xs' }),
+  shopDailyLimits: z.object({ candyXS: z.number(), candyS: z.number(), candyM: z.number(), candyL: z.number() })
+    .default({ candyXS: 5, candyS: 3, candyM: 1, candyL: 1 }),
   qualityMult: qualityMultSchema,
   rarityWeights: z.record(rarity, z.number()),
 });
@@ -146,6 +154,7 @@ const inventorySchema = z.object({
   balls: z.record(ballId, z.number()),
   items: z.record(itemId, z.number()),
   incenseCharges: z.number().optional(),
+  shopDaily: z.object({ day: z.string(), counts: z.record(itemId, z.number()) }).optional(),
 });
 
 const goalSchema = z.object({

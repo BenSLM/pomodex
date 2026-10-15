@@ -2,9 +2,15 @@ import { Btn } from '../components/motion';
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../data/db';
-import { SHOP_CATALOG, BALL_NAMES } from '../../core/economy';
+import { dailyLimitFor, SHOP_CATALOG, BALL_NAMES } from '../../core/economy';
 import { buyItem, useIncense } from '../../data/actions';
-import type { BallId, ItemId } from '../../core/types';
+import { dayKey } from '../../core/streak';
+import { candyXp, CANDY_ITEM } from '../../core/candies';
+import type { BallId, CandySize, ItemId } from '../../core/types';
+
+const CANDY_BY_ITEM: Partial<Record<string, CandySize>> = Object.fromEntries(
+  (Object.entries(CANDY_ITEM) as [CandySize, ItemId][]).map(([size, id]) => [id, size]),
+);
 
 const ITEM_DESC: Record<string, string> = {
   potion: 'Recupera un Pokémon debilitado',
@@ -23,12 +29,17 @@ const ITEM_DESC: Record<string, string> = {
   dawnStone: 'Evoluciona por objeto',
   iceStone: 'Evoluciona por objeto',
   linkCable: 'Sustituye al intercambio (evolución especial)',
+  lure: '+1 encuentro en la siguiente sesión válida',
 };
 
 export function ShopPage() {
   const profile = useLiveQuery(() => db.profile.get('me'), []);
   const inventory = useLiveQuery(() => db.inventory.get('me'), []);
+  const settings = useLiveQuery(() => db.settings.get('me'), []);
   const [error, setError] = useState('');
+  const config = settings?.rewards;
+  const today = settings ? dayKey(Date.now(), settings.dayRolloverHour) : '';
+  const dailyCounts = inventory?.shopDaily?.day === today ? inventory.shopDaily.counts : {};
 
   const onBuy = async (id: BallId | ItemId) => {
     try {
@@ -57,19 +68,28 @@ export function ShopPage() {
             item.kind === 'ball'
               ? inventory?.balls[item.id as BallId] ?? 0
               : inventory?.items[item.id as ItemId] ?? 0;
+          const candySize = CANDY_BY_ITEM[item.id];
+          const limit = config ? dailyLimitFor(item.id, config) : null;
+          const used = limit != null ? dailyCounts[item.id as ItemId] ?? 0 : 0;
+          const atLimit = limit != null && used >= limit;
           return (
             <div key={item.id} className="panel flex flex-col p-3 text-sm">
               <span className="font-bold">{item.name.es}</span>
               <span className="min-h-[32px] text-xs text-[var(--muted)]">
-                {ITEM_DESC[item.id] ?? 'Mejora tu equipo'}
+                {candySize && config
+                  ? `+${candyXp(candySize, config)} XP`
+                  : ITEM_DESC[item.id] ?? 'Mejora tu equipo'}
               </span>
-              <span className="tabular my-1 text-xs">En inventario: {count}</span>
+              <span className="tabular my-1 text-xs">
+                En inventario: {count}
+                {limit != null && ` · Hoy: ${used}/${limit}`}
+              </span>
               <Btn
                 className="btn btn-accent mt-auto w-full"
                 onClick={() => void onBuy(item.id)}
-                disabled={(profile?.coins ?? 0) < item.price}
+                disabled={(profile?.coins ?? 0) < item.price || atLimit}
               >
-                Comprar · {item.price} 💵
+                {atLimit ? 'Límite diario' : `Comprar · ${item.price} 💵`}
               </Btn>
             </div>
           );

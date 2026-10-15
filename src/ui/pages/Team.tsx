@@ -5,17 +5,21 @@ import { db } from '../../data/db';
 import { dataset } from '../../data/dataset';
 import { Modal, ProgressBar, Sprite, TypeBadge } from '../components/ui';
 import { levelFromXp, xpForLevel } from '../../core/xp';
+import { CANDY_ITEM, CANDY_LABEL, CANDY_SIZES, candyPreview } from '../../core/candies';
+import { canRelease, duplicatePlan, releaseCandyFor } from '../../core/release';
 import {
   addToTeam,
   confirmEvolution,
   dismissEvolution,
   evolveWithItem,
   feedBerry,
+  giveCandy,
   releaseCreature,
+  releaseDuplicates,
   removeFromTeam,
   setCompanion,
 } from '../../data/actions';
-import type { ItemId, OwnedCreature, PendingEvolution } from '../../core/types';
+import type { CandySize, ItemId, OwnedCreature, PendingEvolution, RewardConfig } from '../../core/types';
 
 const STONES: { id: ItemId; label: string }[] = [
   { id: 'fireStone', label: 'Piedra Fuego' },
@@ -40,14 +44,19 @@ export function TeamPage() {
   const pendingMeta = useLiveQuery(() => db.meta.get('pendingEvolutions'), []);
   const pending = (pendingMeta?.value as PendingEvolution[] | undefined) ?? [];
   const [detail, setDetail] = useState<OwnedCreature | null>(null);
+  const config = settings?.rewards;
 
   const team = (profile?.teamIds ?? []).map((id) => (creatures ?? []).find((c) => c.id === id)).filter(Boolean) as OwnedCreature[];
   const ownedList = (creatures ?? []).filter((c) => !(profile?.teamIds ?? []).includes(c.id));
+  const companion = (creatures ?? []).find((c) => c.id === profile?.companionId) ?? null;
+  const dupPlan =
+    profile && config ? duplicatePlan(creatures ?? [], profile, dataset, config) : { toRelease: [], candies: {} };
+  const dupCandyTotal = Object.values(dupPlan.candies).reduce((a, b) => a + (b ?? 0), 0);
 
   const xpInfo = (c: OwnedCreature) => {
     const species = dataset.byId.get(c.speciesId);
     if (!species) return { level: c.level, value: 0, max: 1 };
-    const scale = settings?.rewards.xpScale ?? 0.05;
+    const scale = settings?.rewards.xpScale ?? 0.25;
     const level = levelFromXp(c.xp, scale);
     const base = xpForLevel(level, scale);
     const next = xpForLevel(level + 1, scale);
@@ -118,6 +127,27 @@ export function TeamPage() {
         </div>
       )}
 
+      {dupPlan.toRelease.length > 0 && (
+        <div className="panel flex flex-wrap items-center gap-3 p-4 text-sm">
+          <div>
+            <h2 className="font-bold">Liberar duplicados</h2>
+            <p className="text-[var(--muted)]">
+              {dupPlan.toRelease.length} duplicado(s) de la caja → +{dupCandyTotal} caramelo(s).
+            </p>
+          </div>
+          <Btn
+            className="btn btn-danger ml-auto"
+            onClick={() => {
+              if (confirm(`¿Liberar ${dupPlan.toRelease.length} duplicado(s)? Ganarás ${dupCandyTotal} caramelo(s).`)) {
+                void releaseDuplicates();
+              }
+            }}
+          >
+            Liberar duplicados
+          </Btn>
+        </div>
+      )}
+
       {ownedList.length > 0 && (
         <div className="panel p-4">
           <h2 className="mb-2 font-bold">Otros Pokémon ({ownedList.length})</h2>
@@ -154,13 +184,16 @@ export function TeamPage() {
         </div>
       )}
 
-      {detail && (
+      {detail && profile && config && (
         <CreatureDetail
           creature={detail}
           isTeam={team.some((t) => t.id === detail.id)}
-          isCompanion={profile?.companionId === detail.id}
+          isCompanion={profile.companionId === detail.id}
+          canReleaseNow={canRelease(detail, profile, dataset)}
           teamFull={team.length >= 6}
-          stones={inventory?.items ?? {}}
+          items={inventory?.items ?? {}}
+          companionLevel={companion?.level ?? 1}
+          config={config}
           onClose={() => setDetail(null)}
         />
       )}
@@ -172,15 +205,29 @@ function CreatureDetail(props: {
   creature: OwnedCreature;
   isTeam: boolean;
   isCompanion: boolean;
+  canReleaseNow: boolean;
   teamFull: boolean;
-  stones: Partial<Record<ItemId, number>>;
+  items: Partial<Record<ItemId, number>>;
+  companionLevel: number;
+  config: RewardConfig;
   onClose: () => void;
 }) {
-  const { creature, isTeam, isCompanion, teamFull, stones, onClose } = props;
+  const { creature, isTeam, isCompanion, canReleaseNow, teamFull, items, companionLevel, config, onClose } = props;
   const species = dataset.byId.get(creature.speciesId);
+  const [showCandy, setShowCandy] = useState(false);
+  const [error, setError] = useState('');
   if (!species) return null;
-  const info = {
-    level: creature.level,
+
+  const candySizes = CANDY_SIZES.filter((s) => (items[CANDY_ITEM[s]] ?? 0) > 0);
+  const releaseSize = releaseCandyFor(creature.speciesId, dataset, config);
+
+  const doGive = async (size: CandySize) => {
+    try {
+      setError('');
+      await giveCandy(creature.id, size);
+    } catch (e) {
+      setError((e as Error).message);
+    }
   };
 
   return (
@@ -193,7 +240,7 @@ function CreatureDetail(props: {
           ))}
         </div>
         <p className="tabular text-sm">
-          Nv. {info.level} · XP {creature.xp} · Amistad {creature.friendship}/255
+          Nv. {levelFromXp(creature.xp, config.xpScale)} · XP {creature.xp} · Amistad {creature.friendship}/255
         </p>
         <p className="text-xs text-[var(--muted)]">{species.flavor.es}</p>
       </div>
@@ -214,8 +261,47 @@ function CreatureDetail(props: {
             Quitar del equipo
           </Btn>
         )}
+
+        {candySizes.length > 0 && (
+          <div className="panel p-3">
+            <Btn
+              className="btn btn-accent w-full"
+              onClick={() => setShowCandy((v) => !v)}
+              disabled={isCompanion}
+            >
+              Dar caramelo
+            </Btn>
+            {isCompanion && (
+              <p className="mt-1 text-xs text-[var(--muted)]">El compañero no puede recibir caramelos.</p>
+            )}
+            {showCandy && !isCompanion && (
+              <div className="mt-2 flex flex-col gap-2">
+                {candySizes.map((size) => {
+                  const preview = candyPreview(creature, size, config, companionLevel);
+                  return (
+                    <Btn
+                      key={size}
+                      className="btn"
+                      disabled={preview.disabled}
+                      onClick={() => void doGive(size)}
+                    >
+                      <span className="flex w-full items-center justify-between gap-2">
+                        <span>
+                          Caramelo {CANDY_LABEL[size]} ×{items[CANDY_ITEM[size]]}
+                        </span>
+                        <span className="text-xs font-normal text-[var(--muted)]">{preview.label}</span>
+                      </span>
+                    </Btn>
+                  );
+                })}
+              </div>
+            )}
+            {error && <p className="mt-1 text-xs font-bold" style={{ color: 'var(--danger)' }}>{error}</p>}
+          </div>
+        )}
+
         <div className="flex flex-wrap gap-2">
-          {STONES.filter((s) => (stones[s.id] ?? 0) > 0).map((s) => (
+          {STONES.filter((s) => (items[s.id] ?? 0) > 0).map((s) => (
             <Btn
               key={s.id}
               className="btn"
@@ -225,17 +311,25 @@ function CreatureDetail(props: {
             </Btn>
           ))}
         </div>
-        <Btn
-          className="btn btn-danger"
-          onClick={() => {
-            if (confirm(`¿Liberar a ${species.name.es}? (+15 💵)`)) {
-              void releaseCreature(creature.id);
-              onClose();
-            }
-          }}
-        >
-          Liberar (+15 💵)
-        </Btn>
+
+        {canReleaseNow ? (
+          <Btn
+            className="btn btn-danger"
+            onClick={() => {
+              const reward = releaseSize ? ` (+1 caramelo ${CANDY_LABEL[releaseSize]})` : '';
+              if (confirm(`¿Liberar a ${species.name.es}?${reward}`)) {
+                void releaseCreature(creature.id);
+                onClose();
+              }
+            }}
+          >
+            Liberar{releaseSize ? ` (+1 caramelo ${CANDY_LABEL[releaseSize]})` : ''}
+          </Btn>
+        ) : (
+          <p className="text-xs text-[var(--muted)]">
+            No se puede liberar (compañero, equipo, shiny o legendario/mítico).
+          </p>
+        )}
       </div>
     </Modal>
   );

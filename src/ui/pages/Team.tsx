@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../data/db';
 import { dataset } from '../../data/dataset';
 import { Modal, ProgressBar, Sprite, TypeBadge } from '../components/ui';
+import { EvolutionModal } from '../components/EvolutionModal';
 import { levelFromXp, xpForLevel } from '../../core/xp';
 import { CANDY_ITEM, CANDY_LABEL, CANDY_SIZES, candyPreview } from '../../core/candies';
 import { canRelease, duplicatePlan, releaseCandyFor } from '../../core/release';
@@ -44,6 +45,7 @@ export function TeamPage() {
   const pendingMeta = useLiveQuery(() => db.meta.get('pendingEvolutions'), []);
   const pending = (pendingMeta?.value as PendingEvolution[] | undefined) ?? [];
   const [detail, setDetail] = useState<OwnedCreature | null>(null);
+  const [evolving, setEvolving] = useState<{ creature: OwnedCreature; toSpeciesId: number } | null>(null);
   const config = settings?.rewards;
 
   const team = (profile?.teamIds ?? []).map((id) => (creatures ?? []).find((c) => c.id === id)).filter(Boolean) as OwnedCreature[];
@@ -112,7 +114,7 @@ export function TeamPage() {
                   return (
                     <div key={o.toSpeciesId} className="flex items-center gap-2">
                       <Sprite species={target} shiny={creature.shiny} size={64} />
-                      <Btn className="btn btn-primary" onClick={() => void confirmEvolution(creature.id, o.toSpeciesId)}>
+                      <Btn className="btn btn-primary" onClick={() => setEvolving({ creature, toSpeciesId: o.toSpeciesId })}>
                         Evolucionar a {target.name.es}
                       </Btn>
                     </div>
@@ -195,6 +197,18 @@ export function TeamPage() {
           companionLevel={companion?.level ?? 1}
           config={config}
           onClose={() => setDetail(null)}
+        />
+      )}
+
+      {evolving && (
+        <EvolutionModal
+          creature={evolving.creature}
+          toSpeciesId={evolving.toSpeciesId}
+          onConfirm={() => {
+            void confirmEvolution(evolving.creature.id, evolving.toSpeciesId);
+            setEvolving(null);
+          }}
+          onCancel={() => setEvolving(null)}
         />
       )}
     </div>

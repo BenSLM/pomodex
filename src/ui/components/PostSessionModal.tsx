@@ -1,7 +1,11 @@
+import { useLiveQuery } from 'dexie-react-hooks';
 import { Btn } from './motion';
 import { Modal, RarityBadge, TypeBadge, Sprite } from './ui';
 import type { UiRewardSummary } from '../../app/stores/timerStore';
 import { dataset } from '../../data/dataset';
+import { db } from '../../data/db';
+import { MAX_LEVEL } from '../../core/xp';
+import { focusHistoryDays, formatFocusDuration, nextEvolutionEta, nextLevelEta } from '../../core/progress';
 
 export function PostSessionModal({ summary, onClose }: { summary: UiRewardSummary; onClose: () => void }) {
   const qualityLabel = summary.quality === 'perfect' ? 'Perfecta' : summary.quality === 'good' ? 'Buena' : 'Floja';
@@ -34,12 +38,43 @@ export function PostSessionModal({ summary, onClose }: { summary: UiRewardSummar
         {summary.levelUps.length > 0 && (
           <Row label="Subidas de nivel" value={`${summary.levelUps.length} Pokémon subieron de nivel`} />
         )}
+        <CompanionEtaRow />
       </ul>
       <Btn className="btn btn-primary mt-4 w-full" onClick={onClose}>
         Continuar
       </Btn>
     </Modal>
   );
+}
+
+/** §9.8 — estimación del compañero tras la sesión (calidad Buena, racha actual). */
+function CompanionEtaRow() {
+  const profile = useLiveQuery(() => db.profile.get('me'), []);
+  const creature = useLiveQuery(
+    () => (profile?.companionId ? db.creatures.get(profile.companionId) : undefined),
+    [profile?.companionId],
+  );
+  const settings = useLiveQuery(() => db.settings.get('me'), []);
+  const streak = useLiveQuery(() => db.meta.get('streak'), []);
+  const sessions = useLiveQuery(() => db.sessions.toArray(), []);
+  if (!creature || !settings) return null;
+  const streakDays = (streak?.value as { current: number } | undefined)?.current ?? 0;
+  const hasHistory = focusHistoryDays(sessions ?? [], settings.dayRolloverHour) >= 3;
+  const evo = nextEvolutionEta(creature, settings.rewards, dataset, streakDays);
+  let text: string | null = null;
+  if (evo) {
+    if (evo.minutes != null) {
+      const target = dataset.byId.get(evo.toSpeciesId);
+      text = `Evoluciona a ${target?.name.es ?? 'su forma final'} en ${formatFocusDuration(evo.minutes, hasHistory)} de foco`;
+    } else {
+      text = `Evoluciona con ${evo.requirement}`;
+    }
+  } else {
+    const lvl = nextLevelEta(creature, settings.rewards, streakDays);
+    if (lvl.level < MAX_LEVEL) text = `Siguiente nivel en ${formatFocusDuration(lvl.minutes, hasHistory)} de foco`;
+  }
+  if (!text) return null;
+  return <Row label="Compañero" value={text} />;
 }
 
 function formatBalls(balls: string[]): string {

@@ -5,8 +5,16 @@ import { db } from '../../data/db';
 import { useTimerStore } from '../../app/stores/timerStore';
 import { elapsedMs, overtimeMs } from '../../core/timer/machine';
 import { dayKey } from '../../core/streak';
-import { levelFromXp, xpForLevel } from '../../core/xp';
+import { levelFromXp, xpForLevel, MAX_LEVEL } from '../../core/xp';
 import { dataset } from '../../data/dataset';
+import { loadGameState } from '../../data/game';
+import {
+  focusHistoryDays,
+  formatFocusDuration,
+  nextEvolutionEta,
+  nextGoals,
+  nextLevelEta,
+} from '../../core/progress';
 import { ProgressBar, Sprite } from '../components/ui';
 import { PostSessionModal } from '../components/PostSessionModal';
 import { EncounterModal } from '../components/EncounterModal';
@@ -34,6 +42,8 @@ export function FocusPage() {
   const pendingEncounters = useLiveQuery(() => db.encounters.toArray(), []);
   const pendingEvolutions = useLiveQuery(() => db.meta.get('pendingEvolutions'), []);
   const streak = useLiveQuery(() => db.meta.get('streak'), []);
+  const gameState = useLiveQuery(() => loadGameState(), []);
+  const sessions = useLiveQuery(() => db.sessions.toArray(), []);
   const sessionsToday = useLiveQuery(async () => {
     const key = dayKey(Date.now(), settings?.dayRolloverHour ?? 4);
     const all = await db.sessions.toArray();
@@ -91,6 +101,37 @@ export function FocusPage() {
     return { species, level, value: creature.xp - base, max: Math.max(1, next - base) };
   })();
 
+  const streakDays = (streak?.value as { current: number } | undefined)?.current ?? 0;
+
+  // §9.7 — estimación de tiempo del compañero (calidad Buena, racha actual)
+  const companionEta = useMemo(() => {
+    if (!creature || !settings) return null;
+    const hasHistory = focusHistoryDays(sessions ?? [], settings.dayRolloverHour) >= 3;
+    const evo = nextEvolutionEta(creature, settings.rewards, dataset, streakDays);
+    if (evo) {
+      if (evo.minutes != null) {
+        const target = dataset.byId.get(evo.toSpeciesId);
+        return `Evoluciona a ${target?.name.es ?? 'su forma final'} en ${formatFocusDuration(evo.minutes, hasHistory)} de foco`;
+      }
+      return `Evoluciona con ${evo.requirement}`;
+    }
+    const lvl = nextLevelEta(creature, settings.rewards, streakDays);
+    if (lvl.level >= MAX_LEVEL) return 'Ha alcanzado el nivel máximo';
+    return `Siguiente nivel en ${formatFocusDuration(lvl.minutes, hasHistory)} de foco`;
+  }, [creature, settings, sessions, streakDays]);
+
+  // §9.7 — próximo objetivo (extensible; Fase 3 añadirá el jefe activo)
+  const goals = useMemo(() => {
+    if (!gameState || !settings) return [];
+    return nextGoals({
+      state: gameState,
+      dataset,
+      config: settings.rewards,
+      streakDays,
+      historyDays: focusHistoryDays(sessions ?? [], settings.dayRolloverHour),
+    });
+  }, [gameState, settings, sessions, streakDays]);
+
   return (
     <div className="grid gap-4 sm:grid-cols-[2fr,1fr]">
       <section className="panel flex flex-col items-center gap-4 p-5">
@@ -108,6 +149,11 @@ export function FocusPage() {
               <div className="tabular mt-1 text-xs text-[var(--muted)]">
                 {levelInfo.value}/{levelInfo.max} XP
               </div>
+              {companionEta && (
+                <div className="mt-1 text-xs font-semibold" style={{ color: 'var(--secondary)' }}>
+                  {companionEta}
+                </div>
+              )}
             </div>
           </>
         ) : (
@@ -191,8 +237,22 @@ export function FocusPage() {
           <Row label="XP" value={`+${todayXp}`} />
           <Row label="Sesiones" value={String(sessionsToday?.length ?? 0)} />
           <Row label="Enfoque" value={fmt(todayFocus).replace(':', ' h ')} />
-          <Row label="Racha" value={`🔥 ${(streak?.value as { current: number } | undefined)?.current ?? 0} días`} />
+          <Row label="Racha" value={`🔥 ${streakDays} días`} />
         </div>
+
+        {goals.length > 0 && (
+          <div className="panel p-4 text-sm">
+            <h2 className="mb-2 font-bold">Próximo objetivo</h2>
+            <ul className="space-y-1">
+              {goals.map((g) => (
+                <li key={g.id} className="flex gap-2">
+                  <span aria-hidden style={{ color: 'var(--accent-dark)' }}>▸</span>
+                  <span>{g.label}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {(pendingEncounters?.length ?? 0) > 0 && (
           <div className="panel border-2 p-4 text-sm" style={{ borderColor: 'var(--accent-dark)' }}>

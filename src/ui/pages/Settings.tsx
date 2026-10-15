@@ -186,6 +186,14 @@ export function SettingsPage() {
           />
           Habilitar modo Flow
         </label>
+        <label className="flex items-center gap-2">
+          <Input
+            type="checkbox"
+            checked={settings.notifications.sound}
+            onChange={(e) => void patch({ notifications: { ...settings.notifications, sound: e.target.checked } })}
+          />
+          Sonido (gritos al evolucionar)
+        </label>
       </section>
 
       <section className="panel space-y-3 p-4 text-sm">

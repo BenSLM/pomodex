@@ -21,6 +21,7 @@ export const SHOP_CATALOG: ShopItem[] = [
   { id: 'revive', kind: 'item', price: 120, name: { es: 'Revivir', en: 'Revive' } },
   { id: 'streakShield', kind: 'item', price: 150, name: { es: 'Escudo de racha', en: 'Streak shield' } },
   { id: 'incense', kind: 'item', price: 200, name: { es: 'Incienso', en: 'Incense' } },
+  { id: 'lure', kind: 'item', price: 250, name: { es: 'Señuelo', en: 'Lure' } },
   { id: 'berry', kind: 'item', price: 15, name: { es: 'Baya', en: 'Berry' } },
   { id: 'fireStone', kind: 'item', price: 300, name: { es: 'Piedra Fuego', en: 'Fire Stone' } },
   { id: 'waterStone', kind: 'item', price: 300, name: { es: 'Piedra Agua', en: 'Water Stone' } },

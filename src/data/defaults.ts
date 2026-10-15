@@ -22,7 +22,7 @@ export function defaultInventory(): Inventory {
     id: 'me',
     balls: { poke: 5, great: 0, ultra: 0, master: 0 },
     items: {
-      potion: 0, revive: 0, streakShield: 0, incense: 0, berry: 0,
+      potion: 0, revive: 0, streakShield: 0, incense: 0, lure: 0, berry: 0,
       fireStone: 0, waterStone: 0, thunderStone: 0, leafStone: 0, moonStone: 0,
       sunStone: 0, shinyStone: 0, duskStone: 0, dawnStone: 0, iceStone: 0, linkCable: 0,
     },

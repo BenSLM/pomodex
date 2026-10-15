@@ -20,10 +20,14 @@ export function PostSessionModal({ summary, onClose }: { summary: UiRewardSummar
             <Row label="XP compañero" value={`+${summary.xpCompanion}`} />
             {summary.xpTeam > 0 && <Row label="XP equipo" value={`+${summary.xpTeam}`} />}
             <Row label="Monedas" value={`+${summary.coins} 💵`} />
-            {summary.ballEarned && <Row label="Ball recibida" value={summary.ballEarned.toUpperCase()} />}
+            {summary.ballsEarned.length > 0 && <Row label="Balls recibidas" value={formatBalls(summary.ballsEarned)} />}
+            {summary.lureUsed && <Row label="Señuelo" value="usado (+1 encuentro)" />}
             <Row label="Racha" value={`${summary.streakDays} días${summary.shieldUsed ? ' (escudo usado)' : ''}`} />
-            {summary.eggObtained && <Row label="Huevo obtenido" value="🥚 ¡Apareció un huevo!" />}
+            {summary.eggsObtained.length > 0 && <Row label="Huevos obtenidos" value={`🥚 ×${summary.eggsObtained.length}`} />}
             {summary.eggsHatched.length > 0 && <Row label="Huevos" value={`${summary.eggsHatched.length} eclosionaron`} />}
+            {summary.encounters.length > 0 && (
+              <Row label="Pokémon salvajes" value={`${summary.encounters.length} te esperan`} />
+            )}
           </>
         )}
         {!summary.valid && <Row label="Motivo" value="Sesión demasiado corta o incompleta: sin recompensas" />}
@@ -36,6 +40,12 @@ export function PostSessionModal({ summary, onClose }: { summary: UiRewardSummar
       </Btn>
     </Modal>
   );
+}
+
+function formatBalls(balls: string[]): string {
+  const counts = new Map<string, number>();
+  for (const b of balls) counts.set(b, (counts.get(b) ?? 0) + 1);
+  return [...counts.entries()].map(([b, n]) => `${b.toUpperCase()} Ball${n > 1 ? ` ×${n}` : ''}`).join(' · ');
 }
 
 function Row({ label, value }: { label: string; value: string }) {

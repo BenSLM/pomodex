@@ -10,7 +10,7 @@ Código en TypeScript (Vite 6 + React 18 + Tailwind 4 + Dexie + Motion 14). Fase
 
 ## Comandos (verificación en este orden)
 - `npx tsc -b` → limpio.
-- `npm test` → vitest (`tests/**/*.test.{ts,tsx}`, jsdom, `tests/setup.ts`, fake-indexeddb para Dexie); 57 tests / 10 archivos.
+- `npm test` → vitest (`tests/**/*.test.{ts,tsx}`, jsdom, `tests/setup.ts`, fake-indexeddb para Dexie); 68 tests / 11 archivos.
 - Test suelto: `npx vitest run tests/xp.test.ts` (con `npx vitest watch …` si se quiere watch).
 - `npm run build` → `tsc -b && vite build`. No hay ESLint/Prettier configurados y no hay CI.
 - `npm run build-dataset` solo si cambia el dataset: llama a PokeAPI (pausa ~100 ms + reintentos). El JSON ya está commiteado en `src/data/dataset/`; el dev normal no lo necesita.
@@ -39,6 +39,7 @@ Código en TypeScript (Vite 6 + React 18 + Tailwind 4 + Dexie + Motion 14). Fase
 - **Curva de XP única** (Prompt 1): `rawXpForLevel(n) = n³`, sin `growth_rate` ni `xpScale` por especie; `growth_rate` del dataset se ignora.
 - **Lanzamientos ilimitados** (Prompt 1): un fallo **no** elimina el encuentro ni gasta intentos extra; solo resta 1 ball. Se sale del encuentro con "Dejar ir" (confirmación) o cuando expira el TTL (`isEncounterExpired`). El nº de intentos es informativo (`Encounter.attempts`).
 - **Recalibración de XP** (Prompt 2): `xpScale` 0.25, `freePausesPerSession` 1 (la primera pausa no resta calidad). `teamXpShare` se queda en 25 %: **no** hay bonus de recuperación (el equipo se pone al día con caramelos, Prompt 4).
+- **Encuentros por bloques** (Prompt 3): nº/sesión = `clamp(floor(focusedMin / encounterBlockMinutes), 1, maxEncountersPerSession)` (30 min, máx. 3); 1 ball gratis y 1 tirada de huevo **por encuentro**; pity e incienso cuentan por encuentro. `GameState.encounters` es la cola pendiente (máx. `maxPendingEncounters` = 8; el más antiguo, por `expiresAt`, huye). El **Señuelo** (`items.lure`) añade +1 encuentro (tope `maxEncountersPerSession + 1`). `RewardSummary` usa `encounters[]`, `ballsEarned[]`, `eggsObtained[]`.
 
 ## Reglas de documentación
 Cualquier cambio de comportamiento debe reflejarse, en este orden, en:

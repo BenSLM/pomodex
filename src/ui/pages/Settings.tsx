@@ -62,6 +62,9 @@ export function SettingsPage() {
     { key: 'shinyRate', label: 'Probabilidad shiny', step: 0.001 },
     { key: 'streakMinMinutes', label: 'Minutos para racha' },
     { key: 'regionPace', label: 'Ritmo de regiones', step: 0.1 },
+    { key: 'encounterBlockMinutes', label: 'Minutos por encuentro' },
+    { key: 'maxEncountersPerSession', label: 'Máx. encuentros por sesión' },
+    { key: 'maxPendingEncounters', label: 'Máx. encuentros pendientes' },
     { key: 'eggDropChance', label: 'Probabilidad de huevo', step: 0.01 },
   ];
 

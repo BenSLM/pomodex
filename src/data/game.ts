@@ -30,10 +30,11 @@ export async function loadGameState(): Promise<GameState> {
   const creatures = await db.creatures.toArray();
   const dex = await db.dex.toArray();
   const eggs = await db.eggs.toArray();
+  const encounters = await db.encounters.toArray();
   const streak = ((await db.meta.get('streak'))?.value as StreakState | undefined) ?? defaultStreak();
   const pendingEvolutions =
     ((await db.meta.get('pendingEvolutions'))?.value as PendingEvolution[] | undefined) ?? [];
-  return { profile, inventory, creatures, dex, eggs, streak, pendingEvolutions };
+  return { profile, inventory, creatures, dex, eggs, encounters, streak, pendingEvolutions };
 }
 
 async function saveGameState(state: GameState): Promise<void> {
@@ -45,6 +46,8 @@ async function saveGameState(state: GameState): Promise<void> {
   await db.meta.put({ key: 'pendingEvolutions', value: state.pendingEvolutions });
   await db.eggs.clear();
   if (state.eggs.length > 0) await db.eggs.bulkPut(state.eggs);
+  await db.encounters.clear();
+  if (state.encounters.length > 0) await db.encounters.bulkPut(state.encounters);
 }
 
 /** §3.3 — todo el resultado de la sesión se persiste en una sola transacción. */
@@ -74,7 +77,6 @@ export async function resolveSession(
     [db.profile, db.inventory, db.creatures, db.dex, db.meta, db.eggs, db.encounters, db.sessions, db.activeSession],
     async () => {
       await saveGameState(next);
-      if (summary.encounter) await db.encounters.add(summary.encounter);
       await db.sessions.add(fullRecord);
       await db.activeSession.clear();
       await db.profile.update('me', {

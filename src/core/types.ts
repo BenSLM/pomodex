@@ -14,7 +14,7 @@ export type RegionId =
 export type BallId = 'poke' | 'great' | 'ultra' | 'master';
 
 export type ItemId =
-  | 'potion' | 'revive' | 'streakShield' | 'incense' | 'berry'
+  | 'potion' | 'revive' | 'streakShield' | 'incense' | 'lure' | 'berry'
   | 'fireStone' | 'waterStone' | 'thunderStone' | 'leafStone' | 'moonStone' | 'sunStone' | 'shinyStone' | 'duskStone' | 'dawnStone' | 'iceStone' | 'linkCable';
 
 export type SessionMode = 'pomodoro' | 'flow';
@@ -198,6 +198,12 @@ export interface RewardConfig {
   shinyRate: number;
   encounterChance: number;
   encounterTtlHours: number;
+  /** Minutos de foco por encuentro generado (§7.3). */
+  encounterBlockMinutes: number;
+  /** Tope de encuentros por sesión (§7.3). */
+  maxEncountersPerSession: number;
+  /** Máximo de encuentros pendientes; por encima, el más antiguo huye (§7.3). */
+  maxPendingEncounters: number;
   eggDropChance: number;
   pityThreshold: number;
   regionPace: number;
@@ -214,4 +220,5 @@ export interface GameState {
   streak: StreakState;
   pendingEvolutions: PendingEvolution[];
   eggs: Egg[];
+  encounters: Encounter[];
 }

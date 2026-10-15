@@ -6,7 +6,7 @@ import type { ActiveSession, DexEntry, Egg, Encounter, Goal, Inventory, Profile,
 const rarity = z.enum(['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythical']);
 const ballId = z.enum(['poke', 'great', 'ultra', 'master']);
 const itemId = z.enum([
-  'potion', 'revive', 'streakShield', 'incense', 'berry',
+  'potion', 'revive', 'streakShield', 'incense', 'lure', 'berry',
   'fireStone', 'waterStone', 'thunderStone', 'leafStone', 'moonStone', 'sunStone', 'shinyStone', 'duskStone', 'dawnStone', 'iceStone', 'linkCable',
 ]);
 
@@ -62,6 +62,9 @@ const rewardConfigSchema = z.object({
   shinyRate: z.number(),
   encounterChance: z.number(),
   encounterTtlHours: z.number(),
+  encounterBlockMinutes: z.number().default(30),
+  maxEncountersPerSession: z.number().default(3),
+  maxPendingEncounters: z.number().default(8),
   eggDropChance: z.number(),
   pityThreshold: z.number(),
   regionPace: z.number(),

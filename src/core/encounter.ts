@@ -65,3 +65,9 @@ function weightedPick(pool: CreatureSpecies[], weights: number[], rng: Rng): Cre
 export function isEncounterExpired(encounter: Pick<Encounter, 'expiresAt'>, now: number): boolean {
   return now >= encounter.expiresAt;
 }
+
+/** §7.3 — nº de encuentros de la sesión: bloques de `encounterBlockMinutes`, entre 1 y `maxEncountersPerSession`. */
+export function encountersForSession(focusedMinutes: number, config: RewardConfig): number {
+  const blocks = Math.floor(focusedMinutes / Math.max(1, config.encounterBlockMinutes));
+  return Math.min(config.maxEncountersPerSession, Math.max(1, blocks));
+}

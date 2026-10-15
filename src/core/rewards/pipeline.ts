@@ -16,7 +16,7 @@ import { isValidSession, qualityLabel, ballForQuality, type QualityLabel } from 
 import { sessionXp, levelFromXp } from '../xp';
 import { sessionCoins } from '../economy';
 import { updateStreak } from '../streak';
-import { rollEncounter } from '../encounter';
+import { encountersForSession, isEncounterExpired, rollEncounter } from '../encounter';
 import { availableEvolutions, sanitizePendingEvolutions } from '../evolution';
 
 export interface RewardSummary {
@@ -26,13 +26,17 @@ export interface RewardSummary {
   xpTeam: number;
   coins: number;
   levelUps: { creatureId: string; from: number; to: number }[];
-  eggObtained: Egg | null;
+  eggsObtained: Egg[];
   eggsHatched: { creatureId: string; speciesId: number }[];
-  encounter: Encounter | null;
+  encounters: Encounter[];
+  /** Encuentros que huyeron por superar `maxPendingEncounters` (§7.3). */
+  fledEncounters: number;
   streakDays: number;
   streakCredited: boolean;
   shieldUsed: boolean;
-  ballEarned: BallId | null;
+  ballsEarned: BallId[];
+  /** true si se consumió un Señuelo para añadir un encuentro (§7.7). */
+  lureUsed: boolean;
   evolutionCandidates: PendingEvolution[];
   focusMinutes: number;
 }
@@ -76,7 +80,9 @@ export function applySessionRewards(
   let streak = { ...state.streak };
   let pendingEvolutions: PendingEvolution[] = sanitizePendingEvolutions(deps.dataset, creatures, state.pendingEvolutions);
   let eggs: Egg[] = state.eggs.map((e) => ({ ...e }));
-  let encounter: Encounter | null = null;
+  let encounters: Encounter[] = (state.encounters ?? [])
+    .filter((e) => !isEncounterExpired(e, now))
+    .map((e) => ({ ...e }));
   let pityCount = profile.pityCount;
 
   const summary: RewardSummary = {
@@ -86,16 +92,29 @@ export function applySessionRewards(
     xpTeam: 0,
     coins: 0,
     levelUps: [],
-    eggObtained: null,
+    eggsObtained: [],
     eggsHatched: [],
-    encounter: null,
+    encounters: [],
+    fledEncounters: 0,
     streakDays: state.streak.current,
     streakCredited: false,
     shieldUsed: false,
-    ballEarned: null,
+    ballsEarned: [],
+    lureUsed: false,
     evolutionCandidates: [],
     focusMinutes: Math.round(creditedMinutes),
   };
+
+  // Encuentros por bloques de tiempo (§7.3); el Señuelo añade 1 (máx. maxEncountersPerSession + 1).
+  let encounterCount = 0;
+  if (valid) {
+    encounterCount = encountersForSession(creditedMinutes, config);
+    if ((inventory.items.lure ?? 0) > 0) {
+      inventory.items.lure -= 1;
+      encounterCount = Math.min(encounterCount + 1, config.maxEncountersPerSession + 1);
+      summary.lureUsed = true;
+    }
+  }
 
   // 2. XP a compañero y equipo
   if (credited) {
@@ -163,7 +182,9 @@ export function applySessionRewards(
       }
     }
     eggs = remaining;
-    if (valid && eggs.length < 3 && deps.rng.chance(config.eggDropChance)) {
+    // Una tirada de huevo por bloque (§7.6), respetando el máximo de 3 en incubadora.
+    for (let i = 0; i < encounterCount && eggs.length < 3; i++) {
+      if (!deps.rng.chance(config.eggDropChance)) continue;
       const species = rollEggSpecies(deps, config);
       const egg: Egg = {
         id: uid(deps.rng),
@@ -173,7 +194,7 @@ export function applySessionRewards(
         obtainedFrom: 'drop',
       };
       eggs.push(egg);
-      summary.eggObtained = egg;
+      summary.eggsObtained.push(egg);
     }
   }
 
@@ -204,21 +225,23 @@ export function applySessionRewards(
 
   // 7-8. misiones y logros → Fase 4
 
-  // 9. encuentro
-  if (valid && deps.rng.chance(config.encounterChance)) {
+  // 9. encuentros (uno por bloque, con pity por encuentro; §7.3)
+  for (let i = 0; i < encounterCount; i++) {
+    if (!deps.rng.chance(config.encounterChance)) continue;
+    const incenseActive = (inventory.incenseCharges ?? 0) > 0;
     const roll = rollEncounter(deps.dataset, {
       rng: deps.rng,
       config,
       maxGeneration: REGION_GENERATION[profile.currentRegion] ?? 1,
       perfect: label === 'perfect',
       flowOvertimeMin: session.overtimeMs / 60_000,
-      incenseActive: (inventory.incenseCharges ?? 0) > 0,
+      incenseActive,
       pityCount,
     });
-    if ((inventory.incenseCharges ?? 0) > 0) inventory.incenseCharges = (inventory.incenseCharges ?? 0) - 1;
+    if (incenseActive) inventory.incenseCharges = (inventory.incenseCharges ?? 0) - 1;
     const species = getSpecies(deps.dataset, roll.speciesId);
     pityCount = RARE_PLUS.includes(species.rarity) ? 0 : pityCount + 1;
-    encounter = {
+    const generated: Encounter = {
       id: uid(deps.rng),
       speciesId: roll.speciesId,
       shiny: roll.shiny,
@@ -226,21 +249,32 @@ export function applySessionRewards(
       attempts: 0,
       expiresAt: now + config.encounterTtlHours * 3_600_000,
     };
+    encounters.push(generated);
+    summary.encounters.push(generated);
     dex = markDex(dex, roll.speciesId, { seen: true, firstSeenAt: now });
-    summary.encounter = encounter;
-  }
 
-  // ball por calidad (sesión completada)
-  if (valid) {
+    // una ball gratis por encuentro generado, según calidad (§7.4)
     const ball = ballForQuality(session.quality);
     inventory.balls[ball] += 1;
-    summary.ballEarned = ball;
+    summary.ballsEarned.push(ball);
+  }
+
+  // Tope de pendientes: el más antiguo huye (§7.3)
+  const overflow = encounters.length - config.maxPendingEncounters;
+  if (overflow > 0) {
+    const oldest = [...encounters]
+      .sort((a, b) => a.expiresAt - b.expiresAt || a.id.localeCompare(b.id))
+      .slice(0, overflow);
+    const fleeing = new Set(oldest.map((e) => e.id));
+    encounters = encounters.filter((e) => !fleeing.has(e.id));
+    summary.encounters = summary.encounters.filter((e) => !fleeing.has(e.id));
+    summary.fledEncounters = overflow;
   }
 
   profile = { ...profile, pityCount };
 
   return {
-    state: { profile, creatures, dex, inventory, streak, pendingEvolutions, eggs },
+    state: { profile, creatures, dex, inventory, streak, pendingEvolutions, eggs, encounters },
     summary,
   };
 }

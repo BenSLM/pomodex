@@ -152,12 +152,14 @@ SessionRecord
   → 2. XP a compañero y equipo
   → 3. monedas
   → 4. daño al jefe activo (gimnasio)
-  → 5. progreso de huevos
+  → 5. progreso de huevos + tirada de huevo por bloque
   → 6. racha del día
   → 7. misiones
   → 8. logros
-  → 9. generar encuentro (si aplica)
+  → 9. generar encuentros (por bloques de tiempo) + balls gratis
   → RewardSummary (se muestra en un modal post-sesión)
+
+Los pasos 5 y 9 se repiten por **bloque de tiempo** (§7.3): una sesión larga genera varios encuentros, balls y tiradas de huevo. `RewardSummary` los expone como arrays (`encounters`, `ballsEarned`, `eggsObtained`).
 ```
 
 Firma de referencia:
@@ -560,6 +562,13 @@ Modificadores:
 
 **Shiny:** `shinyRate = 1/100` por defecto (configurable). Se garantiza un shiny al alcanzar una racha de 30 días (una vez por hito).
 
+**Encuentros por bloques de tiempo (Prompt 3):**
+- nº de encuentros por sesión válida = `clamp(floor(focusedMin / encounterBlockMinutes), 1, maxEncountersPerSession)` con `encounterBlockMinutes = 30` y `maxEncountersPerSession = 3`. Ej.: 25 min → 1, 60 min → 2, 90+ min → 3. `encounterChance` se aplica **por encuentro**.
+- Cada encuentro da **una ball gratis** (según calidad) y **una tirada de huevo** por bloque (§7.6). El pity timer y el gasto de incienso (1 carga/encuentro) cuentan **por encuentro**.
+- La generación es determinista con el RNG inyectado (mismo seed → mismos encuentros).
+- **Cola de pendientes:** máximo `maxPendingEncounters = 8`; por encima, huye el más antiguo (menor `expiresAt`). Al resolver un encuentro en el modal se abre el siguiente.
+- **Señuelo** (§7.7): +1 encuentro en la siguiente sesión válida (máx. `maxEncountersPerSession + 1`), se consume al terminar.
+
 **Encuentro pendiente:** si el usuario no lo resuelve, expira en `encounterTtlHours` (por defecto 24 h) y el Pokémon "huye" (se marca como visto).
 
 ### 7.4 Captura
@@ -573,7 +582,7 @@ Poké Balls y multiplicadores:
 | Ultra Ball | 2.0 | Tienda / sesión Perfecta |
 | Master Ball | ∞ (100 %) | Solo logros/recompensas únicas |
 
-Una sesión completada da 1 ball según calidad (Floja → Poké, Buena → Great, Perfecta → Ultra) además de las compradas.
+Cada **encuentro generado** da 1 ball según calidad (Floja → Poké, Buena → Great, Perfecta → Ultra) además de las compradas; con varios encuentros por sesión se obtienen varias.
 
 Probabilidad por lanzamiento:
 
@@ -611,7 +620,7 @@ type EvolutionRule =
 
 ### 7.6 Huevos
 
-- Fuentes: drop aleatorio (10 % por sesión), misiones, hitos de racha, tienda.
+- Fuentes: drop aleatorio (`eggDropChance`, por bloque de tiempo, §7.3), misiones, hitos de racha, tienda.
 - `requiredMinutes = hatchCounter × 5` (ej.: `hatchCounter 20` → 100 min ≈ 4 pomodoros; `120` → 600 min).
 - Solo avanzan con minutos de foco válido.
 - Máximo 3 huevos en incubadora.
@@ -632,6 +641,7 @@ Tienda (precios por defecto):
 | Revivir | 120 | Revive instantáneamente |
 | Escudo de racha | 150 | Protege la racha un día perdido (máx 2) |
 | Incienso | 200 | Más rareza por 5 encuentros |
+| Señuelo | 250 | +1 encuentro en la siguiente sesión válida (máx. `maxEncountersPerSession + 1`) |
 | Baya | 15 | +amistad al compañero |
 | Piedra evolutiva | 300 | Para evoluciones por objeto |
 | Huevo | 250 | Huevo aleatorio |
@@ -766,9 +776,12 @@ interface RewardConfig {
   abandonCreditRatio: number;     // 0
   freePausesPerSession: number;   // 1 (pausas que no restan calidad)
   shinyRate: number;              // 0.01
-  encounterChance: number;        // 1.0 (por sesión completada)
+  encounterChance: number;        // 1.0 (por encuentro)
   encounterTtlHours: number;      // 24
-  eggDropChance: number;          // 0.10
+  encounterBlockMinutes: number;  // 30
+  maxEncountersPerSession: number;// 3
+  maxPendingEncounters: number;   // 8
+  eggDropChance: number;          // 0.10 (por bloque)
   pityThreshold: number;          // 15
   regionPace: number;             // 1.0
   streakMinMinutes: number;       // 25

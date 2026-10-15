@@ -24,7 +24,8 @@ export function FocusPage() {
     useTimerStore();
   const [now, setNow] = useState(Date.now());
   const [mode, setMode] = useState<SessionMode>('pomodoro');
-  const [encounter, setEncounter] = useState<Encounter | null>(null);
+  const [queue, setQueue] = useState<Encounter[]>([]);
+  const encounter = queue[0] ?? null;
   const [confirmAbandon, setConfirmAbandon] = useState(false);
 
   const profile = useLiveQuery(() => db.profile.get('me'), []);
@@ -195,9 +196,13 @@ export function FocusPage() {
 
         {(pendingEncounters?.length ?? 0) > 0 && (
           <div className="panel border-2 p-4 text-sm" style={{ borderColor: 'var(--accent-dark)' }}>
-            <h2 className="mb-2 font-bold">Encuentro pendiente</h2>
+            <h2 className="mb-2 font-bold">
+              {pendingEncounters!.length > 1
+                ? `${pendingEncounters!.length} Pokémon salvajes te esperan`
+                : 'Encuentro pendiente'}
+            </h2>
             {pendingEncounters!.map((e) => (
-              <Btn key={e.id} className="btn btn-accent w-full" onClick={() => setEncounter(e)}>
+              <Btn key={e.id} className="btn btn-accent mb-1 w-full" onClick={() => setQueue([e])}>
                 Ver Pokémon
               </Btn>
             ))}
@@ -230,13 +235,15 @@ export function FocusPage() {
         <PostSessionModal
           summary={summary}
           onClose={() => {
-            const enc = summary.encounter;
+            const encs = summary.encounters;
             dismissSummary();
-            if (enc) setEncounter(enc);
+            if (encs.length > 0) setQueue(encs);
           }}
         />
       )}
-      {encounter && <EncounterModal encounter={encounter} onClose={() => setEncounter(null)} />}
+      {encounter && (
+        <EncounterModal encounter={encounter} onClose={() => setQueue((q) => q.slice(1))} />
+      )}
     </div>
   );
 }

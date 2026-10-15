@@ -11,11 +11,12 @@
 | 2 — Progresión | ✅ hecho | XP/nivel/evolución, compañero y equipo, economía+tienda, rachas, pantallas Team/Shop/Settings. Curva única recalibrada (Prompt 2): `xpScale` 0.25, pausa gratis. |
 | 3–6 | ⬜ pendiente | Ver secciones de abajo. |
 
-- Verificación actual: `npx tsc -b` limpio, `npm test` 57/57, `npm run build` OK (bundle ~288 kB gzip; code-splitting en Fase 5). Pulido de Fases 0–2 en curso (`prompts.md`).
+- Verificación actual: `npx tsc -b` limpio, `npm test` 68/68, `npm run build` OK (bundle ~288 kB gzip; code-splitting en Fase 5). Pulido de Fases 0–2 en curso (`prompts.md`). Simulador con economía de balls.
 - `npm run simulate` (60 min × 2 sesiones/día): Nv.16 ~2 h, Nv.36 ~16 h, Nv.50 ~48 h, Nv.100 ~411 h; Kanto (4480 min de daño) ~75 h, compañero Nv.57.
 - Desviaciones menores: Incienso = 1 ítem = 5 cargas (`Inventory.incenseCharges`); solo región Kanto en encuentros.
 - Desviaciones del pulido (Prompt 1): sin categorías; curva de XP única `n³` (se ignora `growth_rate`); lanzamientos ilimitados (se sale con "Dejar ir" o al expirar el TTL); navbar **arriba** (no inferior).
 - Desviaciones del pulido (Prompt 2): `teamXpShare` se queda en 25 % (sin bonus de recuperación; el equipo se pone al día con caramelos, Prompt 4); `freePausesPerSession` (1 por defecto).
+- Desviaciones del pulido (Prompt 3): encuentros/balls/huevos **por bloques de 30 min** (hasta 3/sesión) con cola de pendientes (máx. 8); ítem **Señuelo** (+1 encuentro).
 
 ---
 
@@ -34,7 +35,7 @@
 - ~~Calidad de sesión (pausas, distracciones con Page Visibility API) y validación (≥ 90 %, `minValidMinutes`).~~
 - ~~Categorías de tarea por defecto con tipos afines.~~ (reemplazado: categorías eliminadas en el pulido.)
 - ~~Pipeline de recompensas mínimo: XP, monedas, encuentro (§3.3 con firma `applySessionRewards`).~~
-- ~~Sistema de rareza y tirada de encuentro (pesos, pity timer, pool por región/afinidad).~~ (reemplazado: pool por región + reglas de rareza/pity/incienso; afinidad eliminada.)
+- ~~Sistema de rareza y tirada de encuentro (pesos, pity timer, pool por región/afinidad).~~ (reemplazado: pool por región + reglas de rareza/pity/incienso; afinidad eliminada; Prompt 3: N encuentros por bloques de 30 min con cola y tope de pendientes.)
 - ~~Captura: fórmula de probabilidad, 3 lanzamientos, balls, creación de `OwnedCreature` + `DexEntry`.~~ (reemplazado: lanzamientos ilimitados; un fallo solo resta 1 ball y el Pokémon no huye.)
 - ~~Pantalla Focus (layout de §9.7) + modal resumen post-sesión + pantalla de encuentro.~~
 - ~~Pokédex/Colección básica con grid y filtros.~~
@@ -62,7 +63,8 @@
 - **Hecho cuando:** completas un gimnasio y se desbloquea el siguiente jefe.
 
 ## Fase 4 — Profundidad
-- Huevos: drop, incubadora (máx 3), progreso por minutos de foco, especie oculta.
+- Huevos: drop, incubadora (máx 3), progreso por minutos de foco, especie oculta. (Prompt 3: drop ya por bloque de tiempo.)
+- _(Prompt 3)_ Adelantado de Fase 1/4: encuentros/balls/huevos **por bloques de 30 min**, cola de pendientes (máx. 8) y **Señuelo**.
 - Expediciones (tiers 1/2/3) con recompensas y regla de foco vs tiempo de pared.
 - Misiones diarias/semanales/historia desde JSON declarativo + pantalla Quests.
 - Logros declarativos evaluados al final del pipeline.

@@ -20,10 +20,10 @@
 - **Evoluciones** por nivel, piedra, amistad o regla especial (confirmables, con ramas tipo Eevee).
 - **Huevos** que eclosionan con minutos de foco reales.
 - **Rachas** con día lógico (rollover configurable) y escudos de racha.
-- **Economía**: monedas, tienda (balls, pociones, piedras evolutivas, incienso...), inventario.
+- **Economía**: monedas, tienda (balls, pociones, piedras evolutivas, incienso, Señuelo...), inventario.
 
 ### Encuentros y colección
-- Tras cada sesión completa: **encuentro** con pesos por rareza (common → mythical), pity timer a los 15 y shiny 1/100.
+- **Encuentros por bloques de 30 min** (hasta 3 por sesión, con una ball gratis y una tirada de huevo por bloque): una sesión larga rinde más que varias cortas. Cola de pendientes (máx. 8: el más antiguo huye) con pesos por rareza (common → mythical), pity timer a los 15 y shiny 1/100.
 - **Captura** con fórmula de probabilidad real, lanzamientos ilimitados y animación de sacudidas; puedes "Dejar ir" al Pokémon o esperar a que expire el encuentro.
 - **Pokédex** con filtros por generación, tipo, rareza y estado (visto/capturado/shiny).
 

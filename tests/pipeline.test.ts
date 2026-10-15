@@ -46,10 +46,11 @@ function makeState(): GameState {
       { id: 'c2', speciesId: 3, level: 10, xp: 0, shiny: false, friendship: 70, caughtAt: 0, caughtWith: 'poke' },
     ],
     dex: [],
-    inventory: { id: 'me', balls: { poke: 5, great: 0, ultra: 0, master: 0 }, items: { potion: 1, streakShield: 1, incense: 0, berry: 0, revive: 0, fireStone: 0, waterStone: 0, thunderStone: 0, leafStone: 0, moonStone: 0, sunStone: 0, shinyStone: 0, duskStone: 0, dawnStone: 0, iceStone: 0, linkCable: 0 } },
+    inventory: { id: 'me', balls: { poke: 5, great: 0, ultra: 0, master: 0 }, items: { potion: 1, streakShield: 1, incense: 0, lure: 0, berry: 0, revive: 0, fireStone: 0, waterStone: 0, thunderStone: 0, leafStone: 0, moonStone: 0, sunStone: 0, shinyStone: 0, duskStone: 0, dawnStone: 0, iceStone: 0, linkCable: 0 } },
     streak: { current: 0, best: 0, lastCreditedDay: null },
     pendingEvolutions: [],
     eggs: [],
+    encounters: [],
   };
 }
 
@@ -72,7 +73,7 @@ describe('pipeline de recompensas (§3.3 / §7)', () => {
     expect(summary.xpCompanion).toBe(313); // 250 × 1.25
     expect(summary.xpTeam).toBe(78); // 25% del compañero
     expect(summary.coins).toBe(13); // round(25/25×10×1.25)
-    expect(summary.ballEarned).toBe('ultra');
+    expect(summary.ballsEarned).toEqual(['ultra']);
     expect(summary.streakCredited).toBe(true);
     expect(state.streak.current).toBe(1);
     expect(state.profile.coins).toBe(13);
@@ -92,11 +93,11 @@ describe('pipeline de recompensas (§3.3 / §7)', () => {
   it('genera encuentro con la especie elegida por la semilla (determinismo)', () => {
     const a = applySessionRewards(makeState(), session(), DEFAULT_REWARD_CONFIG, deps(7));
     const b = applySessionRewards(makeState(), session(), DEFAULT_REWARD_CONFIG, deps(7));
-    expect(a.summary.encounter).toEqual(b.summary.encounter);
-    expect(a.summary.encounter).not.toBeNull();
-    expect([1, 2, 3]).toContain(a.summary.encounter!.speciesId);
+    expect(a.summary.encounters).toEqual(b.summary.encounters);
+    expect(a.summary.encounters).toHaveLength(1);
+    expect([1, 2, 3]).toContain(a.summary.encounters[0].speciesId);
     // el encuentro marca la especie como vista
-    expect(a.state.dex.find((d) => d.speciesId === a.summary.encounter!.speciesId)?.seen).toBe(true);
+    expect(a.state.dex.find((d) => d.speciesId === a.summary.encounters[0].speciesId)?.seen).toBe(true);
   });
 
   it('A1: la calidad NO decide la validez (100 % tiempo, calidad 40 → válida, XP ×0.8, ball Poké)', () => {
@@ -104,8 +105,8 @@ describe('pipeline de recompensas (§3.3 / §7)', () => {
     expect(summary.valid).toBe(true);
     expect(summary.quality).toBe('poor');
     expect(summary.xpCompanion).toBe(200); // 25 min × 10 × 0.8 (Floja)
-    expect(summary.ballEarned).toBe('poke');
-    expect(summary.encounter).not.toBeNull();
+    expect(summary.ballsEarned).toEqual(['poke']);
+    expect(summary.encounters).toHaveLength(1);
   });
 
   it('A2: 85 % del tiempo es inválida aunque la calidad sea 100', () => {
@@ -117,7 +118,7 @@ describe('pipeline de recompensas (§3.3 / §7)', () => {
     );
     expect(summary.valid).toBe(false);
     expect(summary.xpCompanion).toBe(0);
-    expect(summary.encounter).toBeNull();
+    expect(summary.encounters).toHaveLength(0);
     expect(state.streak.current).toBe(0);
   });
 
@@ -142,7 +143,7 @@ describe('pipeline de recompensas (§3.3 / §7)', () => {
     expect(summary.xpCompanion).toBe(0);
     expect(summary.coins).toBe(0);
     expect(state.profile.coins).toBe(0);
-    expect(summary.encounter).toBeNull();
+    expect(summary.encounters).toHaveLength(0);
     expect(state.streak.current).toBe(0);
   });
 
@@ -164,7 +165,7 @@ describe('pipeline de recompensas (§3.3 / §7)', () => {
     const { state: next, summary } = applySessionRewards(state, session(), cfg, deps(3));
     expect(summary.eggsHatched).toHaveLength(1); // 90 + 25 ≥ 100
     expect(next.eggs).toHaveLength(1); // y cae uno nuevo
-    expect(summary.eggObtained).not.toBeNull();
+    expect(summary.eggsObtained).toHaveLength(1);
     expect(next.creatures.some((c) => c.speciesId === 3 && c.caughtWith === 'poke')).toBe(true);
   });
 

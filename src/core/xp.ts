@@ -11,13 +11,13 @@ export function rawXpForLevel(n: number): number {
 }
 
 /** XP total para el nivel n ya aplicando XP_SCALE (§7.1). Sin floor (invariante de roundtrip). */
-export function xpForLevel(n: number, xpScale = 0.05): number {
+export function xpForLevel(n: number, xpScale = 0.25): number {
   if (n <= 1) return 0;
   return Math.max(0, rawXpForLevel(n) * xpScale);
 }
 
 /** Nivel derivado de la XP total (la XP es la fuente de verdad). */
-export function levelFromXp(xp: number, xpScale = 0.05): number {
+export function levelFromXp(xp: number, xpScale = 0.25): number {
   let level = 1;
   while (level < MAX_LEVEL && xpForLevel(level + 1, xpScale) <= xp) level++;
   return level;

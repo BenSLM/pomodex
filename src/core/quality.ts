@@ -4,11 +4,14 @@ export interface QualityInput {
   pauseCount: number;
   distractionCount: number;
   strictFocus: boolean;
+  /** §6.5 — pausas que no penalizan; a partir de la siguiente restan −10 (máx −30). */
+  freePausesPerSession: number;
 }
 
-/** §6.5 — empieza en 100: −10/pausa (máx −30), −5/distracción (máx −30, ×2 si strictFocus). */
+/** §6.5 — empieza en 100: −10/pausa (máx −30, las `freePausesPerSession` primeras son gratis), −5/distracción (máx −30, ×2 si strictFocus). */
 export function computeQuality(input: QualityInput): number {
-  const pausePenalty = Math.min(30, input.pauseCount * 10);
+  const paidPauses = Math.max(0, input.pauseCount - input.freePausesPerSession);
+  const pausePenalty = Math.min(30, paidPauses * 10);
   const perDistraction = input.strictFocus ? 10 : 5;
   const distractionPenalty = Math.min(30, input.distractionCount * perDistraction);
   return Math.max(0, 100 - pausePenalty - distractionPenalty);

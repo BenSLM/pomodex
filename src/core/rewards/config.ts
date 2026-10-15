@@ -3,12 +3,13 @@ import type { RewardConfig } from '../types';
 export const DEFAULT_REWARD_CONFIG: RewardConfig = {
   preset: 'normal',
   xpPerMinute: 10,
-  xpScale: 0.05,
+  xpScale: 0.25,
   teamXpShare: 0.25,
   coinsPer25min: 10,
   minValidMinutes: 10,
   completionThreshold: 0.9,
   abandonCreditRatio: 0,
+  freePausesPerSession: 1,
   shinyRate: 0.01,
   encounterChance: 1.0,
   encounterTtlHours: 24,
@@ -29,6 +30,7 @@ export function presetConfig(preset: RewardConfig['preset']): RewardConfig {
         abandonCreditRatio: 1,
         regionPace: 0.7,
         shinyRate: 1 / 50,
+        freePausesPerSession: 2,
       };
     case 'hardcore':
       return {
@@ -37,6 +39,7 @@ export function presetConfig(preset: RewardConfig['preset']): RewardConfig {
         abandonCreditRatio: 0,
         regionPace: 1.5,
         shinyRate: 1 / 400,
+        freePausesPerSession: 0,
       };
     case 'normal':
       return { ...DEFAULT_REWARD_CONFIG };

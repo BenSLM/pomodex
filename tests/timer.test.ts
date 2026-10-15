@@ -68,7 +68,7 @@ describe('máquina de estados del timer (§6)', () => {
     expect(rec.overtimeMs).toBe(5 * 60_000);
   });
 
-  it('las pausas restan calidad (−10 cada una, máx −30)', () => {
+  it('la primera pausa es gratis y las siguientes restan calidad (−10 c/u, máx −30)', () => {
     const { clock, s } = fresh();
     let cur = s;
     for (let i = 0; i < 2; i++) {
@@ -76,6 +76,6 @@ describe('máquina de estados del timer (§6)', () => {
       cur = resume(cur, clock.now() + (i + 1) * 1_000 + 500);
     }
     const rec = finishSession(cur, clock.now() + 25 * 60_000, cfg, { strictFocus: false });
-    expect(rec.quality).toBe(80);
+    expect(rec.quality).toBe(90); // 2 pausas − 1 gratis = 1 × −10
   });
 });

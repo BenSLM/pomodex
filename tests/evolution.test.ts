@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { availableEvolutions, applyEvolution, canEvolveWithItem } from '../src/core/evolution';
+import { availableEvolutions, applyEvolution, canEvolveWithItem, sanitizePendingEvolutions } from '../src/core/evolution';
 import { buildDataset, type CreatureSpecies } from '../src/core/dataset';
 import type { OwnedCreature } from '../src/core/types';
 
@@ -64,5 +64,30 @@ describe('evoluciones (§7.5)', () => {
     expect(canEvolveWithItem(dataset, creature({ speciesId: 3 }), 'fireStone')).toBe(4);
     expect(canEvolveWithItem(dataset, creature({ speciesId: 3 }), 'waterStone')).toBeNull();
     expect(canEvolveWithItem(dataset, creature({ speciesId: 1 }), 'fireStone')).toBeNull();
+  });
+
+  it('sanitizePendingEvolutions deduplica y descarta las que ya no cumplen (niveles bajados)', () => {
+    const creatures = [creature({ id: 'c1', speciesId: 1, level: 15 })];
+    const pending = [
+      { creatureId: 'c1', options: [{ toSpeciesId: 2 }] },
+      { creatureId: 'c1', options: [{ toSpeciesId: 2 }] },
+      { creatureId: 'c2', options: [{ toSpeciesId: 2 }] },
+    ];
+    expect(sanitizePendingEvolutions(dataset, creatures, pending)).toEqual([]);
+  });
+
+  it('sanitizePendingEvolutions conserva la evolución cuando el nivel sí cumple', () => {
+    const creatures = [creature({ id: 'c1', speciesId: 1, level: 16 })];
+    const pending = [{ creatureId: 'c1', options: [{ toSpeciesId: 2 }] }];
+    expect(sanitizePendingEvolutions(dataset, creatures, pending)).toEqual([
+      { creatureId: 'c1', options: [{ toSpeciesId: 2 }] },
+    ]);
+  });
+
+  it('un Pokémon ya evolucionado por debajo del nivel de evolución no se "des-evoluciona"', () => {
+    // speciesId 2 no tiene evoluciones salientes: nunca genera una candidata inversa.
+    const evolved = creature({ speciesId: 2, level: 10 });
+    expect(availableEvolutions(dataset, evolved)).toBeNull();
+    expect(sanitizePendingEvolutions(dataset, [evolved], [])).toEqual([]);
   });
 });

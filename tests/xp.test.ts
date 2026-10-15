@@ -8,9 +8,9 @@ describe('curva de experiencia única (§7.1)', () => {
     expect(rawXpForLevel(1)).toBe(1);
   });
 
-  it('xpScale = 0.05: nivel 50 = 6250 XP, nivel 100 = 50 000 XP', () => {
-    expect(xpForLevel(50)).toBe(6_250);
-    expect(xpForLevel(100)).toBe(50_000);
+  it('xpScale por defecto (0.25): nivel 50 = 31 250 XP, nivel 100 = 250 000 XP', () => {
+    expect(xpForLevel(50)).toBe(31_250);
+    expect(xpForLevel(100)).toBe(250_000);
     expect(xpForLevel(1)).toBe(0);
   });
 
@@ -20,12 +20,12 @@ describe('curva de experiencia única (§7.1)', () => {
     }
   });
 
-  it('respeta un xpScale distinto (0.25 → Prompt 2)', () => {
-    expect(xpForLevel(50, 0.25)).toBe(31_250);
-    expect(levelFromXp(31_250, 0.25)).toBe(50);
+  it('respeta un xpScale distinto', () => {
+    expect(xpForLevel(50, 0.05)).toBe(6_250);
+    expect(levelFromXp(6_250, 0.05)).toBe(50);
   });
 
-  it('la curva es estrictamente creciente (niveles 1-100, escala 0.25)', () => {
+  it('la curva es estrictamente creciente (niveles 1-100)', () => {
     let prev = -1;
     for (let n = 1; n <= 100; n++) {
       const v = xpForLevel(n, 0.25);

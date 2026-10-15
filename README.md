@@ -11,7 +11,7 @@
 ### Timer (el núcleo)
 - **Pomodoro clásico** (25/5, descanso largo tras 4 ciclos), **personalizado** y **flow** (el timer no se detiene: el overtime da bonus de rareza).
 - Cálculo por timestamps, a prueba de segundo plano y recargas: la sesión activa se persiste y se reconcilia al reabrir.
-- Calidad de sesión 0–100 (penaliza pausas y cambios de pestaña) que multiplica XP, daño y calidad de la ball obtenida.
+- Calidad de sesión 0–100 (penaliza pausas —la primera es gratis— y cambios de pestaña) que multiplica XP, daño y calidad de la ball obtenida.
 - Título de la pestaña con el tiempo restante: `24:13 · Nombre del compañero`.
 
 ### Progresión
@@ -103,6 +103,7 @@ focus-trainer/
 ```bash
 npm install
 npm run build-dataset   # genera los JSON del dataset (una vez)
+npm run simulate        # simula el ritmo de progresión de XP (ver SPECS §7.1)
 npm run dev             # desarrollo
 npm run build           # build de producción (PWA)
 npm run test            # unit + componentes

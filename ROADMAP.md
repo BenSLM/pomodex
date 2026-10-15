@@ -2,18 +2,20 @@
 
 > Derivado de `SPECS.md` v0.1. Cada fase termina con algo usable y verificable.
 
-## Estado (2026-10-08)
+## Estado (2026-10-15)
 
 | Fase | Estado | Notas |
 |---|---|---|
 | 0 — Cimientos | ✅ hecho | Tokens, fuentes, core (Clock/Rng/tipos), Dexie v1, `build-dataset` (1025 especies, 485 evoluciones). |
 | 1 — MVP | ✅ hecho | Timer por timestamps, calidad, pipeline de recompensas, encuentro/captura, Focus + Collection, export/import Zod. E2E: smoke jsdom (`tests/app.test.tsx`); Playwright queda pendiente (Fase 5). |
-| 2 — Progresión | ✅ hecho | XP/nivel/evolución, compañero y equipo, economía+tienda, rachas, pantallas Team/Shop/Settings. |
+| 2 — Progresión | ✅ hecho | XP/nivel/evolución, compañero y equipo, economía+tienda, rachas, pantallas Team/Shop/Settings. Curva única recalibrada (Prompt 2): `xpScale` 0.25, pausa gratis. |
 | 3–6 | ⬜ pendiente | Ver secciones de abajo. |
 
-- Verificación actual: `npx tsc -b` limpio, `npm test` 50/50, `npm run build` OK (bundle ~288 kB gzip; code-splitting en Fase 5). Pulido de Fases 0–2 en curso (`prompts.md`).
+- Verificación actual: `npx tsc -b` limpio, `npm test` 57/57, `npm run build` OK (bundle ~288 kB gzip; code-splitting en Fase 5). Pulido de Fases 0–2 en curso (`prompts.md`).
+- `npm run simulate` (60 min × 2 sesiones/día): Nv.16 ~2 h, Nv.36 ~16 h, Nv.50 ~48 h, Nv.100 ~411 h; Kanto (4480 min de daño) ~75 h, compañero Nv.57.
 - Desviaciones menores: Incienso = 1 ítem = 5 cargas (`Inventory.incenseCharges`); solo región Kanto en encuentros.
 - Desviaciones del pulido (Prompt 1): sin categorías; curva de XP única `n³` (se ignora `growth_rate`); lanzamientos ilimitados (se sale con "Dejar ir" o al expirar el TTL); navbar **arriba** (no inferior).
+- Desviaciones del pulido (Prompt 2): `teamXpShare` se queda en 25 % (sin bonus de recuperación; el equipo se pone al día con caramelos, Prompt 4); `freePausesPerSession` (1 por defecto).
 
 ---
 
@@ -49,6 +51,7 @@
 - ~~Rachas con `dayRolloverHour`, escudos e hitos (7/14/30/60/100).~~
 - ~~Pantallas: Team, Shop, ajustes de recompensas (`RewardConfig` con presets).~~
 - ~~**Hecho cuando:** un Pokémon sube de nivel y evoluciona según §7.5.~~
+- _(Prompt 2)_ Recalibración de XP: curva única `n³` con `xpScale` 0.25, pausa gratis (`freePausesPerSession`), script `npm run simulate` y tests de hitos (`tests/progression.test.ts`).
 
 ## Fase 3 — Gimnasios y regiones
 - Datos a mano de Kanto (`src/data/regions/kanto.json`: 8 gimnasios + 4 Alto Mando + Campeón).

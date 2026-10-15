@@ -58,6 +58,7 @@ const rewardConfigSchema = z.object({
   minValidMinutes: z.number(),
   completionThreshold: z.number(),
   abandonCreditRatio: z.number(),
+  freePausesPerSession: z.number().default(1),
   shinyRate: z.number(),
   encounterChance: z.number(),
   encounterTtlHours: z.number(),

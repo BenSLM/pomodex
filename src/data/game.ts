@@ -1,5 +1,6 @@
 import { db } from './db';
 import { defaultInventory, defaultProfile, defaultSettings, defaultStreak } from './defaults';
+import { DEFAULT_REWARD_CONFIG } from '../core/rewards/config';
 import type { GameState, Settings, StreakState, PendingEvolution } from '../core/types';
 import type { ActiveSession, SessionRecord } from '../core/types';
 import { finishSession } from '../core/timer/machine';
@@ -17,7 +18,10 @@ export async function ensureSeeded(): Promise<void> {
 }
 
 export async function getSettings(): Promise<Settings> {
-  return (await db.settings.get('me')) ?? defaultSettings();
+  const stored = await db.settings.get('me');
+  if (!stored) return defaultSettings();
+  // Mezcla con los valores por defecto para no romper ajustes guardados con campos nuevos.
+  return { ...stored, rewards: { ...DEFAULT_REWARD_CONFIG, ...stored.rewards } };
 }
 
 export async function loadGameState(): Promise<GameState> {

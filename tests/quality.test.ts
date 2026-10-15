@@ -25,15 +25,20 @@ describe('captura (§7.4)', () => {
 });
 
 describe('calidad y validez de sesión (§6.4-§6.5)', () => {
-  it('penaliza pausas (−10, máx −30) y distracciones (−5, máx −30)', () => {
-    expect(computeQuality({ pauseCount: 1, distractionCount: 0, strictFocus: false })).toBe(90);
-    expect(computeQuality({ pauseCount: 5, distractionCount: 0, strictFocus: false })).toBe(70);
-    expect(computeQuality({ pauseCount: 0, distractionCount: 6, strictFocus: false })).toBe(70);
-    expect(computeQuality({ pauseCount: 0, distractionCount: 0, strictFocus: false })).toBe(100);
-    expect(computeQuality({ pauseCount: 0, distractionCount: 0, strictFocus: false })).toBe(100);
+  it('la primera pausa es gratis; a partir de la segunda resta −10 (máx −30)', () => {
+    expect(computeQuality({ pauseCount: 0, distractionCount: 0, strictFocus: false, freePausesPerSession: 1 })).toBe(100);
+    expect(computeQuality({ pauseCount: 1, distractionCount: 0, strictFocus: false, freePausesPerSession: 1 })).toBe(100);
+    expect(computeQuality({ pauseCount: 2, distractionCount: 0, strictFocus: false, freePausesPerSession: 1 })).toBe(90);
+    expect(computeQuality({ pauseCount: 5, distractionCount: 0, strictFocus: false, freePausesPerSession: 1 })).toBe(70);
+  });
+  it('penaliza distracciones (−5, máx −30)', () => {
+    expect(computeQuality({ pauseCount: 0, distractionCount: 6, strictFocus: false, freePausesPerSession: 1 })).toBe(70);
   });
   it('strictFocus duplica el castigo de distracciones', () => {
-    expect(computeQuality({ pauseCount: 0, distractionCount: 3, strictFocus: true })).toBe(70);
+    expect(computeQuality({ pauseCount: 0, distractionCount: 3, strictFocus: true, freePausesPerSession: 1 })).toBe(70);
+  });
+  it('freePausesPerSession = 0 no perdona ninguna pausa', () => {
+    expect(computeQuality({ pauseCount: 1, distractionCount: 0, strictFocus: false, freePausesPerSession: 0 })).toBe(90);
   });
   it('etiquetas: ≥90 Perfecta, 60-89 Buena, <60 Floja', () => {
     expect(qualityLabel(95)).toBe('perfect');

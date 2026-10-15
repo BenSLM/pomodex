@@ -464,7 +464,7 @@ idle ──start──▶ focusing ◀──resume── paused
 
 ### 6.5 Calidad de sesión (0–100)
 Empieza en 100:
-- −10 por pausa (máx −30).
+- −10 por pausa (máx −30), pero las `freePausesPerSession` primeras pausas (por defecto 1) **no** restan calidad.
 - −5 por distracción (pérdida de foco de pestaña > 10 s, detectada con Page Visibility API), máx −30.
 - Con `strictFocus` activado, las distracciones restan el doble.
 
@@ -500,10 +500,22 @@ Durante el descanso se muestra el **panel de descanso** con acciones: resolver e
 | ~~slow~~ | ~~5n³ / 4~~ |
 | ~~erratic / fluctuating~~ | ~~Tablas por tramos (implementar según referencia de PokeAPI/Bulbapedia)~~ |
 
-- **Curva única (reemplazado, Prompt 1):** `rawXpForLevel(n) = n³`, escalada por `xpScale` (por defecto 0.05). El `growth_rate` del dataset se ignora a propósito.
+- **Curva única (Prompt 1; recalibrada en Prompt 2):** `rawXpForLevel(n) = n³`, escalada por `xpScale` (**por defecto 0.25**). El `growth_rate` del dataset se ignora a propósito.
 
-- Referencia de ritmo: nivel 50 ≈ 6 250 XP (~25 sesiones de 25 min). Nivel 100 ≈ 50 000 XP (~80–90 h de foco para un Pokémon `medium-fast`).
+- Referencia de ritmo (con `xpPerMinute = 10`, calidad Buena ×1.0, sin racha, partiendo de nivel 5), en horas de foco independientes de la duración de sesión:
+
+| Hito | Horas de foco |
+|---|---|
+| Nv. 16 | ~1.7 h |
+| Nv. 36 | ~19.4 h |
+| Nv. 50 | ~52 h |
+| Nv. 75 | ~176 h |
+| Nv. 100 | ~417 h |
+
+  Comprobado con `npm run simulate` y por los tests de `tests/progression.test.ts`. Cualquier cambio de balance debe re-ejecutar el script y actualizar los tests de hitos.
 - Nivel máximo 100. Opcional futuro: "estrellas de maestría" tras el 100.
+
+> Estas cifras son del compañero (recibe el 100 % de la XP). El resto del equipo recibe `teamXpShare` (25 %) y se pone al día con caramelos de XP (Prompt 4); no hay bonus de recuperación.
 
 ### 7.2 Compañero y amistad
 - Compañero = Pokémon activo en pantalla principal.
@@ -746,12 +758,13 @@ Todos los valores de balance viven en un único objeto con presets.
 interface RewardConfig {
   preset: 'casual' | 'normal' | 'hardcore' | 'custom';
   xpPerMinute: number;            // 10
-  xpScale: number;                // 0.05
+  xpScale: number;                // 0.25
   teamXpShare: number;            // 0.25
   coinsPer25min: number;          // 10
   minValidMinutes: number;        // 10
   completionThreshold: number;    // 0.9
   abandonCreditRatio: number;     // 0
+  freePausesPerSession: number;   // 1 (pausas que no restan calidad)
   shinyRate: number;              // 0.01
   encounterChance: number;        // 1.0 (por sesión completada)
   encounterTtlHours: number;      // 24
@@ -766,9 +779,9 @@ interface RewardConfig {
 
 | Preset | Diferencias |
 |---|---|
-| casual | Sin penalización por abandono, `regionPace` 0.7, `shinyRate` 1/50 |
+| casual | Sin penalización por abandono, `regionPace` 0.7, `shinyRate` 1/50, `freePausesPerSession` 2 |
 | normal | Valores por defecto |
-| hardcore | Nuzlocke ON, `regionPace` 1.5, `shinyRate` 1/400 |
+| hardcore | Nuzlocke ON, `regionPace` 1.5, `shinyRate` 1/400, `freePausesPerSession` 0 |
 
 La pantalla de ajustes permite editar cada valor con descripción, y botón "restablecer". Cambiar el preset **no** reescribe el historial.
 

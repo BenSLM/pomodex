@@ -20,6 +20,31 @@ export function applyEvolution(creature: OwnedCreature, toSpeciesId: number): Ow
   return { ...creature, speciesId: toSpeciesId };
 }
 
+/**
+ * Recalcula y deduplica las evoluciones pendientes contra el estado actual.
+ * Necesario tras recalibrar el balance (los niveles derivados bajan): una entrada
+ * que ya no cumple el requisito se descarta, y nunca hay dos por Pokémon.
+ */
+export function sanitizePendingEvolutions(
+  dataset: Dataset,
+  creatures: OwnedCreature[],
+  pending: PendingEvolution[],
+): PendingEvolution[] {
+  const byId = new Map(creatures.map((c) => [c.id, c]));
+  const seen = new Set<string>();
+  const result: PendingEvolution[] = [];
+  for (const p of pending) {
+    if (seen.has(p.creatureId)) continue;
+    const c = byId.get(p.creatureId);
+    if (!c) continue;
+    const evo = availableEvolutions(dataset, c);
+    if (!evo) continue;
+    seen.add(p.creatureId);
+    result.push(evo);
+  }
+  return result;
+}
+
 /** Reglas por objeto (piedras) y "special" (fallback). */
 export function canEvolveWithItem(dataset: Dataset, creature: OwnedCreature, itemId: string): number | null {
   const edge = dataset.evolutionEdges.find(

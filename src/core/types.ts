@@ -193,6 +193,8 @@ export interface RewardConfig {
   minValidMinutes: number;
   completionThreshold: number;
   abandonCreditRatio: number;
+  /** Pausas por sesión que no restan calidad (a partir de la siguiente, −10 c/u). */
+  freePausesPerSession: number;
   shinyRate: number;
   encounterChance: number;
   encounterTtlHours: number;

@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "build-dataset": "tsx scripts/build-dataset.ts"
+    "build-dataset": "tsx scripts/build-dataset.ts",
+    "simulate": "tsx scripts/simulate-progression.ts"
   },
   "dependencies": {
     "@fontsource/fredoka": "^5.2.5",

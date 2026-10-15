@@ -70,6 +70,7 @@ export function finishSession(
     pauseCount: session.pauseCount,
     distractionCount: session.distractionCount,
     strictFocus: opts.strictFocus,
+    freePausesPerSession: config.freePausesPerSession,
   });
   const ratio = session.plannedMs > 0 ? focusedMs / session.plannedMs : 1;
   const outcome: SessionRecord['outcome'] =

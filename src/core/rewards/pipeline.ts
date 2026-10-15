@@ -17,7 +17,7 @@ import { sessionXp, levelFromXp } from '../xp';
 import { sessionCoins } from '../economy';
 import { updateStreak } from '../streak';
 import { rollEncounter } from '../encounter';
-import { availableEvolutions } from '../evolution';
+import { availableEvolutions, sanitizePendingEvolutions } from '../evolution';
 
 export interface RewardSummary {
   valid: boolean;
@@ -74,7 +74,7 @@ export function applySessionRewards(
   let dex = state.dex.map((d) => ({ ...d }));
   let inventory = cloneInventory(state.inventory);
   let streak = { ...state.streak };
-  let pendingEvolutions: PendingEvolution[] = state.pendingEvolutions.map((p) => ({ ...p, options: [...p.options] }));
+  let pendingEvolutions: PendingEvolution[] = sanitizePendingEvolutions(deps.dataset, creatures, state.pendingEvolutions);
   let eggs: Egg[] = state.eggs.map((e) => ({ ...e }));
   let encounter: Encounter | null = null;
   let pityCount = profile.pityCount;
@@ -122,7 +122,9 @@ export function applySessionRewards(
     });
     for (const c of creatures) {
       const prev = state.creatures.find((x) => x.id === c.id);
-      if (prev && prev.level !== c.level) summary.levelUps.push({ creatureId: c.id, from: prev.level, to: c.level });
+      if (!prev) continue;
+      const prevLevel = levelFromXp(prev.xp, config.xpScale);
+      if (c.level > prevLevel) summary.levelUps.push({ creatureId: c.id, from: prevLevel, to: c.level });
     }
 
     // candidatas a evolución (confirmables, §7.5)

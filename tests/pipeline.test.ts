@@ -3,6 +3,7 @@ import { FakeClock } from '../src/core/clock';
 import { mulberry32 } from '../src/core/rng';
 import { applySessionRewards } from '../src/core/rewards/pipeline';
 import { DEFAULT_REWARD_CONFIG } from '../src/core/rewards/config';
+import { xpForLevel } from '../src/core/xp';
 import { buildDataset, type CreatureSpecies, type EvolutionEdge } from '../src/core/dataset';
 import type { GameState, SessionRecord } from '../src/core/types';
 
@@ -41,7 +42,7 @@ function makeState(): GameState {
       companionId: 'c1', teamIds: ['c1', 'c2'], currentRegion: 'kanto', schemaVersion: 1, pityCount: 0,
     },
     creatures: [
-      { id: 'c1', speciesId: 1, level: 15, xp: 200, shiny: false, friendship: 70, caughtAt: 0, caughtWith: 'poke' },
+      { id: 'c1', speciesId: 1, level: 15, xp: xpForLevel(15, DEFAULT_REWARD_CONFIG.xpScale), shiny: false, friendship: 70, caughtAt: 0, caughtWith: 'poke' },
       { id: 'c2', speciesId: 3, level: 10, xp: 0, shiny: false, friendship: 70, caughtAt: 0, caughtWith: 'poke' },
     ],
     dex: [],
@@ -81,9 +82,9 @@ describe('pipeline de recompensas (§3.3 / §7)', () => {
   it('el XP sube de nivel y plantea evolución confirmable (§7.5)', () => {
     const { state, summary } = applySessionRewards(makeState(), session(), DEFAULT_REWARD_CONFIG, deps());
     const c1 = state.creatures.find((c) => c.id === 'c1')!;
-    expect(c1.xp).toBe(513);
-    expect(c1.level).toBeGreaterThan(15);
-    expect(summary.levelUps[0]).toMatchObject({ creatureId: 'c1', from: 15 });
+    expect(c1.xp).toBe(xpForLevel(15, DEFAULT_REWARD_CONFIG.xpScale) + 313);
+    expect(c1.level).toBe(16);
+    expect(summary.levelUps[0]).toMatchObject({ creatureId: 'c1', from: 15, to: 16 });
     expect(summary.evolutionCandidates[0]?.creatureId).toBe('c1');
     expect(summary.evolutionCandidates[0]?.options[0]?.toSpeciesId).toBe(2);
   });
